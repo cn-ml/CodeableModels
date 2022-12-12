@@ -1,8 +1,9 @@
 import re
-from typing import Any, Optional
-
+from typing import Any, List, Optional, TypeVar, Unpack
+from codeable_models.cclass import CClass
+from codeable_models.cobject import CObject
 from codeable_models.cexception import CException
-from codeable_models.cclassifier import CClassifier
+from codeable_models.cclassifier import CClassifier, CClassifierKwargs
 from codeable_models.cmetaclass import CMetaclass
 from codeable_models.cstereotype import CStereotype
 from codeable_models.internal.commons import check_is_cmetaclass, check_is_cclass
@@ -10,8 +11,9 @@ from codeable_models.internal.stereotype_holders import CStereotypesHolder, CSte
 from codeable_models.internal.var_values import get_var_value, VarValueKind, delete_var_value, set_var_value, \
     get_var_values, set_var_values
 
+T = TypeVar("T")
 
-def _check_for_classifier_and_role_name_match(classifier, role_name, association_classifier, association_role_name):
+def _check_for_classifier_and_role_name_match(classifier: Optional[CClassifier], role_name: Optional[T], association_classifier: CClassifier, association_role_name: T):
     if classifier is None and role_name is None:
         return False
     matches = True
@@ -25,11 +27,13 @@ def _check_for_classifier_and_role_name_match(classifier, role_name, association
         return True
     return False
 
+class CAssociationKwargs(CClassifierKwargs, total=False):
+    pass
 
 class CAssociation(CClassifier):
     STAR_MULTIPLICITY = -1
 
-    def __init__(self, source: CClassifier, target: CClassifier, descriptor: Optional[Any]=None, **kwargs):
+    def __init__(self, source: CClassifier, target: CClassifier, descriptor: Optional[Any]=None, **kwargs: Unpack[CAssociationKwargs]):
         """
         ``CAssociation`` is used for representing associations. Usually associations are created using the
         ``association`` method of :py:class:`.CClassifier` which calls the constructor of ``CAssociation``
@@ -132,7 +136,7 @@ class CAssociation(CClassifier):
         self.source = source
         self.target = target
         self.role_name = None
-        self.source_role_name = None
+        self.source_role_name: Optional[str] = None
         self.source_multiplicity_ = "1"
         self.source_lower_multiplicity = 1
         self.source_upper_multiplicity = 1
@@ -143,7 +147,7 @@ class CAssociation(CClassifier):
         self.composition_ = False
         self.stereotypes_holder = CStereotypesHolder(self)
         self.derived_from_ = None
-        self.derived_associations_ = []
+        self.derived_associations_: List[CAssociation] = []
         self.stereotype_instances_holder = CStereotypeInstancesHolder(self)
         self.tagged_values_ = {}
         # we set the name here already so that either the name=... name or the descriptor name go into
@@ -159,7 +163,7 @@ class CAssociation(CClassifier):
         if source != target:
             target.associations_.append(self)
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.extend(["multiplicity", "role_name", "source_multiplicity",
@@ -176,7 +180,7 @@ class CAssociation(CClassifier):
             name = self.name
         return f"CAssociation name = {name!s}, source = {self.source!s} -> target = {self.target!s}"
 
-    def get_opposite_classifier(self, classifier):
+    def get_opposite_classifier(self, classifier: CClassifier):
         """Given a classifier, this method returns the opposite in the association,
         i.e. the source if ``classifier`` is the
         target, and vice versa. Raises an exception if ``classifier`` is neither source nor target.
@@ -200,10 +204,10 @@ class CAssociation(CClassifier):
             return True
         return False
 
-    def matches_target_(self, classifier, role_name):
+    def matches_target_(self, classifier: Optional[CClassifier], role_name: Optional[str]):
         return _check_for_classifier_and_role_name_match(classifier, role_name, self.target, self.role_name)
 
-    def matches_source_(self, classifier, role_name):
+    def matches_source_(self, classifier: Optional[CClassifier], role_name: Optional[str]):
         return _check_for_classifier_and_role_name_match(classifier, role_name, self.source, self.source_role_name)
 
     @property
@@ -225,12 +229,12 @@ class CAssociation(CClassifier):
         return self.composition_
 
     @composition.setter
-    def composition(self, composition):
+    def composition(self, composition: bool):
         if composition:
             self.aggregation_ = False
         self.composition_ = composition
 
-    def _set_multiplicity(self, multiplicity, is_target_multiplicity):
+    def _set_multiplicity(self, multiplicity: str, is_target_multiplicity: bool):
         if not isinstance(multiplicity, str):
             raise CException("multiplicity must be provided as a string")
 
@@ -288,7 +292,7 @@ class CAssociation(CClassifier):
         return self.multiplicity_
 
     @multiplicity.setter
-    def multiplicity(self, multiplicity):
+    def multiplicity(self, multiplicity: str):
         self.multiplicity_ = multiplicity
         self._set_multiplicity(multiplicity, True)
 
@@ -299,7 +303,7 @@ class CAssociation(CClassifier):
         return self.source_multiplicity_
 
     @source_multiplicity.setter
-    def source_multiplicity(self, multiplicity):
+    def source_multiplicity(self, multiplicity: str):
         self.source_multiplicity_ = multiplicity
         self._set_multiplicity(multiplicity, False)
 
@@ -311,7 +315,7 @@ class CAssociation(CClassifier):
         return self.stereotypes_holder.stereotypes
 
     @stereotypes.setter
-    def stereotypes(self, elements):
+    def stereotypes(self, elements: Optional[List[CStereotype] | CStereotype]):
         if not self.is_metaclass_association_():
             raise CException("stereotypes on associations can only be defined for metaclass associations")
         self.stereotypes_holder.stereotypes = elements
@@ -400,7 +404,7 @@ class CAssociation(CClassifier):
         set_var_values(self, new_values, VarValueKind.TAGGED_VALUE)
 
     @staticmethod
-    def _check_association_class_derived_from_association_metaclass(class_, metaclass_, direction_string):
+    def _check_association_class_derived_from_association_metaclass(class_: CClassifier, metaclass_: CClassifier, direction_string: str):
         try:
             check_is_cclass(class_)
         except CException:
@@ -414,8 +418,8 @@ class CAssociation(CClassifier):
             raise CException(f"association {direction_string!s} class '{class_!s}' is not " +
                              f"derived {direction_string!s} metaclass '{metaclass_!s}'")
 
-    def check_derived_association_multiplicities_(self, metaclass_association, add_to_source_upper=0,
-                                                  add_to_upper=0):
+    def check_derived_association_multiplicities_(self, metaclass_association: "CAssociation", add_to_source_upper: int=0,
+                                                  add_to_upper: int=0):
         # Before we can check the multiplicities we need to collect other derived associations of the
         # same kind (= same classes or their superclasses are used, derived from the same metaclass association).
         # All their upper multiplicities and upper source multiplicities need to be added to the
@@ -427,7 +431,7 @@ class CAssociation(CClassifier):
         #   c1.association(c2, "a1: [c1] * -> [c2] 1", derived_from=a)
         # without adding up the multiplicities, an upper (target) multiplicity of 2 could be reached, violating
         # the meta-class target upper multiplicity of 1.
-        other_derived_associations_requiring_checking = []
+        other_derived_associations_requiring_checking: List[CAssociation] = []
         source_upper_multiplicity = self.source_upper_multiplicity + add_to_source_upper
         if add_to_source_upper == CAssociation.STAR_MULTIPLICITY:
             source_upper_multiplicity = CAssociation.STAR_MULTIPLICITY
@@ -503,7 +507,7 @@ class CAssociation(CClassifier):
                                                                         self.source_upper_multiplicity,
                                                                         self.upper_multiplicity)
 
-    def _check_derived_association_has_same_aggregation_state(self, metaclass_association):
+    def _check_derived_association_has_same_aggregation_state(self, metaclass_association: "CAssociation"):
         if metaclass_association.aggregation and not self.aggregation:
             raise CException(f"metaclass association is an aggregation, but derived association is not")
         if self.aggregation and not metaclass_association.aggregation:
@@ -550,7 +554,7 @@ class CAssociation(CClassifier):
         return self.derived_from_
 
     @derived_from.setter
-    def derived_from(self, metaclass_association):
+    def derived_from(self, metaclass_association: Optional["CAssociation"]):
         if metaclass_association is not None:
             if not isinstance(metaclass_association, CAssociation):
                 raise CException(f"'{metaclass_association!s}' is not an association")
@@ -590,8 +594,9 @@ class CAssociation(CClassifier):
             all_instances = self.source.all_classes
         elif isinstance(self.source, CStereotype):
             all_instances = self.source.all_extended_instances
-        else:
+        elif isinstance(self.source, CClass):
             all_instances = self.source.all_objects
+        else: raise Exception("Invalid source!")
         for instance in all_instances:
             for link in instance.links:
                 link.delete()
@@ -613,7 +618,7 @@ class CAssociation(CClassifier):
             self.derived_associations_ = []
         super().delete()
 
-    def check_multiplicity_(self, obj, actual_length, actual_opposite_length, check_target_multiplicity):
+    def check_multiplicity_(self, obj: CObject, actual_length: int, actual_opposite_length: int, check_target_multiplicity: bool):
         if check_target_multiplicity:
             upper = self.upper_multiplicity
             lower = self.lower_multiplicity
@@ -670,6 +675,7 @@ class CAssociation(CClassifier):
                 self.source_multiplicity = m.group(2)
         else:
             m = re.search(regexp_only_multiplicity, source_str)
+            if m is None: raise Exception("No source multiplicity!")
             self.source_multiplicity = m.group(1)
 
         m = re.search(regexp_with_role_name, target_str)
@@ -679,6 +685,7 @@ class CAssociation(CClassifier):
                 self.multiplicity = m.group(2)
         else:
             m = re.search(regexp_only_multiplicity, target_str)
+            if m is None: raise Exception("No target multiplicity!")
             self.multiplicity = m.group(1)
 
         if aggregation:
@@ -692,9 +699,9 @@ class CAssociation(CClassifier):
         """Overridden method from :py:class:`.CClassifier`. Attributes on associations are not supported."""
         return super().attributes
 
-    def _set_attribute(self, name, value):
+    def _set_attribute(self, name: Any, value: Any):
         raise CException("setting of attributes not supported for associations")
 
     @attributes.setter
-    def attributes(self, attribute_descriptions):
+    def attributes(self, attribute_descriptions: Any):
         raise CException("setting of attributes not supported for associations")

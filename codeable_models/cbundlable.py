@@ -1,5 +1,6 @@
 from typing import Any, List, Optional, TypedDict, Unpack
 from codeable_models.cassociation import CAssociation
+from codeable_models.cclassifier import CClassifier
 from codeable_models.cobject import CObject
 from codeable_models.clink import CLink
 from codeable_models.cbundle import CBundle
@@ -10,7 +11,7 @@ from codeable_models.cnamedelement import CNamedElement
 from codeable_models.cstereotype import CStereotype
 from codeable_models.internal.commons import set_keyword_args, check_named_element_is_not_deleted
 
-class CBundlableKwargs(TypedDict):
+class CBundlableKwargs(TypedDict, total=False):
     pass
 
 class CBundlable(CNamedElement):
@@ -155,7 +156,7 @@ class CBundlable(CNamedElement):
         return context.elements
 
     @staticmethod
-    def append_connected_(context: "ConnectedElementsContext", connected: List["CBundlable"]):
+    def append_connected_(context: "ConnectedElementsContext", connected: List[CClassifier]):
         for c in connected:
             if c not in context.elements:
                 context.elements.append(c)

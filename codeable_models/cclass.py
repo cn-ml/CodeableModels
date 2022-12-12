@@ -1,5 +1,5 @@
-from typing import Any, Dict, List, Optional
-from codeable_models.cclassifier import CClassifier
+from typing import Any, Dict, List, Optional, Unpack
+from codeable_models.cclassifier import CClassifier, CClassifierKwargs
 from codeable_models.cexception import CException
 from codeable_models import CMetaclass
 from codeable_models.cobject import CObject
@@ -11,8 +11,13 @@ from codeable_models.internal.var_values import delete_var_value, set_var_value,
     set_var_values, VarValueKind
 
 
+class CClassKwargs(CClassifierKwargs):
+    stereotype_instances: Any
+    values: Any
+    tagged_values: Any
+
 class CClass(CClassifier):
-    def __init__(self, metaclass: CMetaclass, name: Optional[str]=None, **kwargs: dict[str, Any]):
+    def __init__(self, metaclass: CMetaclass, name: Optional[str]=None, **kwargs: Unpack[CClassKwargs]):
         """``CClass`` is used to define classes. Classes in Codeable Models are instances of metaclasses (defined
         using :py:class:`.CMetaclass`).
 
@@ -287,7 +292,7 @@ class CClass(CClassifier):
         return self.stereotype_instances_holder.stereotypes
 
     @stereotype_instances.setter
-    def stereotype_instances(self, elements):
+    def stereotype_instances(self, elements: Optional[List[CStereotype] | CStereotype]):
         self.stereotype_instances_holder.stereotypes = elements
         self._init_stereotype_default_values()
 
@@ -298,7 +303,8 @@ class CClass(CClassifier):
         # class initialization has finished, other values like metaclass defaults might have
         # been set. Then the stereotype defaults will not overwrite existing values (you need to
         # delete them explicitly in order for them to be replaced by stereotype defaults)
-        existing_attribute_names = []
+        existing_attribute_names: List[str] = []
+        if self.metaclass is None: raise Exception("Missing metaclass!")
         for mcl in self.metaclass.class_path:
             for attrName in mcl.attribute_names:
                 if attrName not in existing_attribute_names:

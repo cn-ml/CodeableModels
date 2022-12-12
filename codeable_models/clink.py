@@ -1,4 +1,5 @@
-from typing import Dict
+from typing import Dict, Optional, TypedDict, Unpack
+
 from codeable_models.cobject import CObject
 from codeable_models.internal.commons import *
 from codeable_models.internal.stereotype_holders import CStereotypeInstancesHolder
@@ -85,7 +86,7 @@ class CLink(CObject):
         result = super().__repr__()
         return f"`CLink {result} source = {self.source_!r} -> target = {self.target_!r}`"
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("stereotype_instances")
@@ -182,10 +183,10 @@ class CLink(CObject):
         return self.stereotype_instances_holder.stereotypes
 
     @stereotype_instances.setter
-    def stereotype_instances(self, elements):
+    def stereotype_instances(self, elements: Optional[List[CStereotype] | CStereotype]):
         self.stereotype_instances_holder.stereotypes = elements
 
-    def get_tagged_value(self, name, stereotype=None):
+    def get_tagged_value(self, name: str, stereotype: Optional[CClassifier]=None):
         """Get the tagged value of a stereotype attribute with the given ``name``. Optionally the stereotype
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its stereotype.
@@ -202,7 +203,7 @@ class CLink(CObject):
         return get_var_value(self, self.stereotype_instances_holder.get_stereotype_instance_path(), self.tagged_values_,
                              name, VarValueKind.TAGGED_VALUE, stereotype)
 
-    def delete_tagged_value(self, name, stereotype=None):
+    def delete_tagged_value(self, name: str, stereotype: Optional[CClassifier]=None):
         """Delete tagged value of a stereotype attribute with the given ``name``.  Optionally the stereotype
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its stereotype.
@@ -219,7 +220,7 @@ class CLink(CObject):
         return delete_var_value(self, self.stereotype_instances_holder.get_stereotype_instance_path(),
                                 self.tagged_values_, name, VarValueKind.TAGGED_VALUE, stereotype)
 
-    def set_tagged_value(self, name, value, stereotype=None):
+    def set_tagged_value(self, name: str, value: Any, stereotype: Optional[CClassifier]=None):
         """Set the tagged value of a stereotype attribute with the given ``name`` to ``value``.  Optionally the
         stereotype to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its stereotype.
@@ -248,18 +249,18 @@ class CLink(CObject):
         return get_var_values(self.stereotype_instances_holder.get_stereotype_instance_path(), self.tagged_values_)
 
     @tagged_values.setter
-    def tagged_values(self, new_values):
+    def tagged_values(self, new_values: Dict[Any, Any]):
         if self.is_deleted:
             raise CException(f"can't set tagged values on deleted link")
         set_var_values(self, new_values, VarValueKind.TAGGED_VALUE)
 
 
-def _get_target_objects_from_definition(source_obj, targets):
+def _get_target_objects_from_definition(source_obj: CObject, targets: Optional[CObject | List[CObject]]):
     if targets is None:
         targets = []
     elif not isinstance(targets, list):
         targets = [targets]
-    new_targets = []
+    new_targets: List[CObject] = []
     for t in targets:
         is_source_a_class = source_obj.class_object_class is not None
         if isinstance(t, CClass):
@@ -297,13 +298,15 @@ def _get_target_objects_from_definition(source_obj, targets):
             raise CException(f"link target '{t!s}' is not an object, class, or link")
     return new_targets
 
+CheckedLinkDefinitions = Dict[CObject, List[CObject]]
+LinkDefinitions = Dict[CObject, List[CObject] | CObject] | CheckedLinkDefinitions
 
-def _check_link_definition_and_replace_classes(link_definitions):
+def _check_link_definition_and_replace_classes(link_definitions: LinkDefinitions) -> CheckedLinkDefinitions:
     if not isinstance(link_definitions, dict):
         raise CException("link definitions should be of the form " +
                          "{<link source 1>: <link target(s) 1>, ..., <link source n>: <link target(s) n>}")
 
-    new_definitions = {}
+    new_definitions: CheckedLinkDefinitions = {}
     for source in link_definitions:
         source_obj = source
         if source is None or source == []:
@@ -318,11 +321,15 @@ def _check_link_definition_and_replace_classes(link_definitions):
     return new_definitions
 
 
-def _determine_matching_association_and_set_context_info(context, source, targets):
+def _determine_matching_association_and_set_context_info(context: "LinkKeywordsContext", source: CObject, targets: List[CObject]):
     if source.class_object_class is not None:
         target_classifier_candidates = get_common_metaclasses(
             [co.class_object_class if not isinstance(co, CLink) else co for co in targets])
+        if not isinstance(source.class_object_class, CClass):
+            raise Exception("class_object_class must be a CClass!")
         context.sourceClassifier = source.class_object_class.metaclass
+        if context.sourceClassifier is None:
+            raise Exception("No metaclass in class_object_class!")
     else:
         target_classifier_candidates = [get_common_classifier(targets)]
         context.sourceClassifier = source.classifier
@@ -338,8 +345,8 @@ def _determine_matching_association_and_set_context_info(context, source, target
     associations = context.sourceClassifier.all_associations
     if context.association is not None:
         associations = [context.association]
-    matches_association_order = []
-    matches_reverse_association_order = []
+    matches_association_order: List[CAssociation] = []
+    matches_reverse_association_order: List[CAssociation] = []
     matching_classifier = None
 
     for association in associations:
@@ -368,10 +375,11 @@ def _determine_matching_association_and_set_context_info(context, source, target
         raise CException(
             f"link specification ambiguous, multiple matching associations found for source '{source!s}' " +
             f"and targets '{[str(item) for item in targets]!s}'")
+    return context.association
 
 
-def link_objects_(context: "LinkKeywordsContext", source, targets):
-    new_links = []
+def link_objects_(context: "LinkKeywordsContext", source: CObject, targets: List[CObject]):
+    new_links: List[CLink] = []
     source_obj = source
     if isinstance(source, CClass):
         source_obj = source.class_object_
@@ -392,6 +400,8 @@ def link_objects_(context: "LinkKeywordsContext", source, targets):
                     link.delete()
                 raise CException(
                     f"trying to link the same link twice '{source!s} -> {target!s}'' twice for the same association")
+        if context.association is None:
+            raise Exception("No association in context for clink!")
         link = CLink(context.association, source_for_link, target_for_link)
         if context.label is not None:
             link.label = context.label
@@ -408,7 +418,7 @@ def link_objects_(context: "LinkKeywordsContext", source, targets):
     return new_links
 
 
-def remove_links_for_associations_(context, source, targets):
+def remove_links_for_associations_(context: "LinkKeywordsContext", source: CObject, targets: List[CObject]):
     if source not in context.objectLinksHaveBeenRemoved:
         context.objectLinksHaveBeenRemoved.append(source)
         for link in source.get_links_for_association(context.association):
@@ -418,9 +428,20 @@ def remove_links_for_associations_(context, source, targets):
             context.objectLinksHaveBeenRemoved.append(target)
             for link in target.get_links_for_association(context.association):
                 link.delete()
+    
+class DeleteLinksKwargs(TypedDict, total=False):
+    role_name: str
+    association: CAssociation
+    label: None
 
+class LinksKwargs(DeleteLinksKwargs, total=False):
+    role_name: str
+    association: CAssociation
+    stereotype_instances: CStereotype
+    label: None
+    tagged_values: Dict[str, Any]
 
-def set_links(link_definitions, do_add_links=False, **kwargs):
+def set_links(link_definitions: LinkDefinitions, do_add_links: bool=False, **kwargs: Unpack[LinksKwargs]):
     """
     Sets multiple links by first deleting all existing links on the objects to be used in the links and then
     adding the links in the ``link_definitions`` with the same functionality as the :py:func:`.add_links` function.
@@ -440,7 +461,7 @@ def set_links(link_definitions, do_add_links=False, **kwargs):
     context = LinkKeywordsContext(**kwargs)
     link_definitions = _check_link_definition_and_replace_classes(link_definitions)
 
-    new_links = []
+    new_links: List[CLink] = []
     for source in link_definitions:
         if source.is_deleted:
             raise CException("cannot link to deleted source")
@@ -458,6 +479,8 @@ def set_links(link_definitions, do_add_links=False, **kwargs):
             for link in new_links:
                 link.delete()
             raise e
+    if context.association is None:
+        raise Exception("Context association was not determined!")
     try:
         for source in link_definitions:
             targets = link_definitions[source]
@@ -477,8 +500,7 @@ def set_links(link_definitions, do_add_links=False, **kwargs):
         raise e
     return new_links
 
-
-def add_links(link_definitions, **kwargs):
+def add_links(link_definitions: LinkDefinitions, **kwargs: Unpack[LinksKwargs]):
     """
     Function used to add multiple links at once, maybe to different source objects. The function takes
     a dict of link definitions. With it multiple links can be specified at once. It also supports
@@ -527,7 +549,7 @@ def add_links(link_definitions, **kwargs):
     return set_links(link_definitions, True, **kwargs)
 
 
-def delete_links(link_definitions, **kwargs):
+def delete_links(link_definitions: LinkDefinitions, **kwargs: Unpack[DeleteLinksKwargs]):
     """
     Function used to delete multiple links, maybe to different source objects.
 
@@ -604,7 +626,7 @@ def delete_links(link_definitions, **kwargs):
 
 
 class LinkKeywordsContext(object):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Unpack[LinksKwargs]):
         self.role_name = kwargs.pop("role_name", None)
         self.association = kwargs.pop("association", None)
         self.stereotype_instances = kwargs.pop("stereotype_instances", None)
@@ -614,7 +636,7 @@ class LinkKeywordsContext(object):
             raise CException(f"unknown keywords argument")
         if self.association is not None:
             check_is_cassociation(self.association)
-        self.sourceClassifier = None
-        self.target_classifier = None
-        self.matchesInOrder = {}
-        self.objectLinksHaveBeenRemoved = []
+        self.sourceClassifier: Optional[CClassifier] = None
+        self.target_classifier: Optional[CClassifier] = None
+        self.matchesInOrder: Dict[CObject, bool] = {}
+        self.objectLinksHaveBeenRemoved: List[CObject] = []

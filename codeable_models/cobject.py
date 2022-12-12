@@ -7,7 +7,7 @@ from codeable_models.internal.var_values import delete_var_value, set_var_value,
     set_var_values, VarValueKind
 
 class CObjectKwargs(CBundlableKwargs, total=False):
-    class_object_class_: CObject
+    class_object_class_: CClass
     values: Dict[str, Any]
 
 class CObject(CBundlable):
@@ -57,7 +57,7 @@ class CObject(CBundlable):
         inherits from :py:class:`.CObject`).
 
         """
-        self.class_object_class_: Optional[CObject] = None
+        self.class_object_class_: Optional[CObject | CClass] = None
         if 'class_object_class_' in kwargs:
             class_object_class = kwargs.pop('class_object_class_', None)
             self.class_object_class_ = class_object_class
@@ -71,7 +71,7 @@ class CObject(CBundlable):
 
         if cl is not None:
             check_named_element_is_not_deleted(cl)
-        self.classifier_: CClassifier = cl
+        self.classifier_: CClass = cl
         self.attribute_values = {}
         super().__init__(name, **kwargs)
         if self.class_object_class_ is None:
@@ -107,7 +107,7 @@ class CObject(CBundlable):
         return self.classifier_
 
     @classifier.setter
-    def classifier(self, cl):
+    def classifier(self, cl: CClass):
         if isinstance(self, CLink):
             raise CException(
                 f"Changes to the classifier (i.e., the association) of a link" +
@@ -218,7 +218,7 @@ class CObject(CBundlable):
         return delete_var_value(self, self.classifier.class_path, self.attribute_values, attribute_name,
                                 VarValueKind.ATTRIBUTE_VALUE, classifier)
 
-    def set_value(self, attribute_name, value, classifier=None):
+    def set_value(self, attribute_name: str, value, classifier=None):
         """Set the value of an attribute with the given ``attribute_name`` to ``value``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its classifier.
@@ -276,7 +276,7 @@ class CObject(CBundlable):
                 result.append(opposite.class_object_class_)
         return result
 
-    def get_links_for_association(self, association):
+    def get_links_for_association(self, association: Optional[CAssociation]):
         """
         Method to get all link objects which are defined based on the given association.
 
@@ -287,7 +287,7 @@ class CObject(CBundlable):
             list[CLink]: The list of link objects.
 
         """
-        association_links = []
+        association_links: List[CLink] = []
         for link in list(self.links_):
             if link.association == association:
                 association_links.extend([link])

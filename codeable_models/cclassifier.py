@@ -1,12 +1,15 @@
-from typing import Dict, Optional, Set
+from typing import Dict, Optional, Set, Unpack
 from codeable_models.cattribute import CAttribute
-from codeable_models.cbundlable import CBundlable, ConnectedElementsContext
+from codeable_models.cbundlable import CBundlable, CBundlableKwargs, ConnectedElementsContext
 from codeable_models.cenum import CEnum
 from codeable_models.internal.commons import *
 
 
+class CClassifierKwargs(CBundlableKwargs, total=False):
+    pass
+
 class CClassifier(CBundlable):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name: Optional[str]=None, **kwargs: Unpack[CClassifierKwargs]):
         """``CClassifier`` is superclass of classifiers such as :py:class:`.CClass` and :py:class:`.CMetaclass`
         defining common features for
         classifiers. The class is usually not used directly but its features are used from the subclasses.
@@ -54,7 +57,7 @@ class CClassifier(CBundlable):
         self.superclasses_: List[CClass] = []
         self.subclasses_: List[CClass] = []
         self.attributes_: Dict[str, CAttribute] = {}
-        self.associations_ = []
+        self.associations_: List[CAssociation] = []
         super().__init__(name, **kwargs)
 
     def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Dict[str, Any]):
@@ -353,8 +356,8 @@ class CClassifier(CBundlable):
 
     def compute_connected_(self, context: ConnectedElementsContext):
         super().compute_connected_(context)
-        connected_candidates = []
-        connected = []
+        connected_candidates: List[CClassifier] = []
+        connected: List[CClassifier] = []
         for association in self.associations:
             connected_candidates.append(association.get_opposite_classifier(self))
         connected_candidates = self.superclasses + self.subclasses + connected_candidates
@@ -365,7 +368,7 @@ class CClassifier(CBundlable):
 
     # get class path starting from this classifier, including this classifier
     def get_class_path_(self):
-        class_path = [self]
+        class_path: List[CClass] = [self]
         for sc in self.superclasses:
             for cl in sc.get_class_path_():
                 if cl not in class_path:

@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 from codeable_models.cbundlable import CBundlable
 from codeable_models.cclass import CClass
 from codeable_models.clink import CLink
@@ -89,11 +89,11 @@ class CStereotype(CClassifier):
         the association, respectively.
         """
         self.extended_ = []
-        self.extended_instances_: List[CClass] = []
+        self.extended_instances_: List[CClass | CAssociation | CLink] = []
         self.default_values_ = {}
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("extended")
@@ -169,7 +169,7 @@ class CStereotype(CClassifier):
             return
         for e in self.extended_:
             e.stereotypes_holder.stereotypes_.remove(self)
-        self.extended_: List[CMetaclass] = []
+        self.extended_: List[CMetaclass | CAssociation] = []
         super().delete()
 
     def update_default_values_of_classifier_(self, attribute=None):

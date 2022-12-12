@@ -3,7 +3,7 @@ from codeable_models.cbundlable import CBundlable, CBundlableKwargs
 from codeable_models.cexception import CException
 
 
-class CEnumKwargs(CBundlableKwargs):
+class CEnumKwargs(CBundlableKwargs, total=False):
     pass
 
 AttributeValueType = Any
