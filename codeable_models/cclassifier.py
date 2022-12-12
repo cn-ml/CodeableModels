@@ -1,5 +1,5 @@
 from codeable_models.cattribute import CAttribute
-from codeable_models.cbundlable import CBundlable
+from codeable_models.cbundlable import CBundlable, ConnectedElementsContext
 from codeable_models.cenum import CEnum
 from codeable_models.internal.commons import *
 
@@ -350,7 +350,7 @@ class CClassifier(CBundlable):
         from codeable_models.cassociation import CAssociation
         return CAssociation(self, target, descriptor, **kwargs)
 
-    def compute_connected_(self, context):
+    def compute_connected_(self, context: ConnectedElementsContext):
         super().compute_connected_(context)
         connected_candidates = []
         connected = []

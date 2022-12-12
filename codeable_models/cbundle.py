@@ -1,11 +1,13 @@
+from typing import Any, Dict, List, Optional, TypedDict, Unpack
 from codeable_models import CBundlable
+from codeable_models.cbundlable import ConnectedElementsContext
 from codeable_models.cexception import CException
 from codeable_models.cnamedelement import CNamedElement
 from codeable_models.internal.commons import check_named_element_is_not_deleted
 
 
 class CBundle(CBundlable):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name: Optional[str]=None, **kwargs: dict[str, Any]):
         """
         ``CBundle`` is used to manage bundles, i.e., groups of modelling elements in Codeable Models.
 
@@ -31,16 +33,16 @@ class CBundle(CBundlable):
                                     cobject, cclassifier, cclass, cmetaclass, cstereotype, cassociation, clink])
 
         """
-        self.elements_ = []
+        self.elements_: List[CBundlable] = []
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: dict[str, Any]):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("elements")
         super()._init_keyword_args(legal_keyword_args, **kwargs)
 
-    def add(self, elt):
+    def add(self, elt: CBundlable):
         """
         Add an element to the bundle.
 
@@ -51,16 +53,12 @@ class CBundle(CBundlable):
             None
 
         """
-        if elt is not None:
-            if elt in self.elements_:
-                raise CException(f"element '{elt!s}' cannot be added to bundle: element is already in bundle")
-            if isinstance(elt, CBundlable):
-                self.elements_.append(elt)
-                elt.bundles_.append(self)
-                return
-        raise CException(f"can't add '{elt!s}': not an element")
+        if elt in self.elements_:
+            raise CException(f"element '{elt!s}' cannot be added to bundle: element is already in bundle")
+        self.elements_.append(elt)
+        elt.bundles_.append(self)
 
-    def remove(self, element):
+    def remove(self, element: CBundlable):
         """
         Remove an element from the bundle.
 
@@ -72,7 +70,6 @@ class CBundle(CBundlable):
 
         """
         if (element is None or
-                (not isinstance(element, CBundlable)) or
                 (self not in element.bundles)):
             raise CException(f"'{element!s}' is not an element of the bundle")
         self.elements_.remove(element)
@@ -101,29 +98,30 @@ class CBundle(CBundlable):
         return list(self.elements_)
 
     @elements.setter
-    def elements(self, elements):
+    def elements(self, elements: List[CBundlable] | CBundlable):
         if elements is None:
             elements = []
         for e in self.elements_:
-            e._bundle = None
+            e.bundles = None
         self.elements_ = []
         if isinstance(elements, CNamedElement):
             elements = [elements]
-        elif not isinstance(elements, list):
-            raise CException(f"elements requires a list or a named element as input")
         for e in elements:
             if e is not None:
                 check_named_element_is_not_deleted(e)
             else:
                 raise CException(f"'None' cannot be an element of bundle")
-            isinstance(e, CNamedElement)
             if e not in self.elements_:
                 # if it is already in the bundle, do not add it twice
                 self.elements_.append(e)
                 # noinspection PyUnresolvedReferences
                 e.bundles_.append(self)
 
-    def get_elements(self, **kwargs):
+    class GetElementsArgs(TypedDict, total=False):
+        name: str
+        type: type
+
+    def get_elements(self, **kwargs: Unpack[GetElementsArgs]):
         """
         Get specific elements from the bundle. Per default returns all elements.
 
@@ -138,19 +136,11 @@ class CBundle(CBundlable):
             List[CBundlable]: List of elements.
 
         """
-        type_ = None
-        name = None
+        type_ = kwargs.get("type")
+        name = kwargs.get("name")
         # use this as name can also be provided as None
-        name_specified = False
-        for key in kwargs:
-            if key == "type":
-                type_ = kwargs["type"]
-            elif key == "name":
-                name = kwargs["name"]
-                name_specified = True
-            else:
-                raise CException(f"unknown argument to getElements: '{key!s}'")
-        elements = []
+        name_specified = name is not None
+        elements: List[CBundlable] = []
         for elt in self.elements_:
             append = True
             if name_specified and elt.name != name:
@@ -162,7 +152,7 @@ class CBundle(CBundlable):
                 elements.append(elt)
         return elements
 
-    def get_element(self, **kwargs):
+    def get_element(self, **kwargs: GetElementsArgs):
         """
           Get a specific element from the bundle. Returns the first found element, if more than one are found.
           Returns ``None`` if none is found.
@@ -176,13 +166,13 @@ class CBundle(CBundlable):
 
           """
         elements = self.get_elements(**kwargs)
-        return None if len(elements) == 0 else elements[0]
+        return next(iter(elements), None)
 
-    def compute_connected_(self, context):
+    def compute_connected_(self, context: ConnectedElementsContext):
         super().compute_connected_(context)
         if not context.process_bundles:
             return
-        connected = []
+        connected: List[CBundlable] = []
         for element in self.elements_:
             if element not in context.stop_elements_exclusive:
                 connected.append(element)
@@ -190,7 +180,7 @@ class CBundle(CBundlable):
 
 
 class CPackage(CBundle):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name: Optional[str]=None, **kwargs: Dict[str, Any]):
         """
         Simple class to designate bundles as packages.
 
@@ -200,7 +190,7 @@ class CPackage(CBundle):
 
 
 class CLayer(CBundle):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name: Optional[str]=None, **kwargs: Dict[str, Any]):
         """
         Simple class to designate bundles as layers, and manage sub-/super-layer relations.
 
@@ -215,11 +205,11 @@ class CLayer(CBundle):
                 - The ``super_layer`` kwarg accepts a ``CLayer`` as a super layer (same as the same-named property).
 
         """
-        self._sub_layer = None
-        self._super_layer = None
+        self._sub_layer: Optional["CLayer"] = None
+        self._super_layer: Optional["CLayer"] = None
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Dict[str, Any]):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("sub_layer")
@@ -227,15 +217,13 @@ class CLayer(CBundle):
         super()._init_keyword_args(legal_keyword_args, **kwargs)
 
     @property
-    def sub_layer(self):
+    def sub_layer(self: "CLayer"):
         """CLayer: Accepts a ``CLayer`` as a sub layer.
         """
         return self._sub_layer
 
     @sub_layer.setter
-    def sub_layer(self, layer):
-        if layer is not None and not isinstance(layer, CLayer):
-            raise CException(f"not a layer: {layer!s}")
+    def sub_layer(self, layer: "CLayer"):
         if self._sub_layer is not None:
             self._sub_layer._super_layer = None
         self._sub_layer = layer
@@ -251,9 +239,7 @@ class CLayer(CBundle):
         return self._super_layer
 
     @super_layer.setter
-    def super_layer(self, layer):
-        if layer is not None and not isinstance(layer, CLayer):
-            raise CException(f"not a layer: {layer!s}")
+    def super_layer(self, layer: "CLayer"):
         if self._super_layer is not None:
             self._super_layer._sub_layer = None
         self._super_layer = layer

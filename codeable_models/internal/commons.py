@@ -1,6 +1,7 @@
+from typing import Any, List
 from codeable_models import *
 
-def set_keyword_args(obj, allowed_values, **kwargs):
+def set_keyword_args(obj: object, allowed_values: List[str], **kwargs: dict[str, Any]):
     for key in kwargs:
         if key in allowed_values:
             setattr(obj, key, kwargs[key])

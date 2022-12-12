@@ -1,9 +1,9 @@
-from codeable_models.cexception import CException
+from typing import Any, List, Optional
 from codeable_models.internal.commons import set_keyword_args
 
 
 class CNamedElement(object):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: Optional[str], **kwargs: dict[str, Any]):
         """CNamedElement is the superclass for all named elements in Codeable Models, such as CClass, CObject, and
         so on. The class is usually not used directly.
 
@@ -30,8 +30,6 @@ class CNamedElement(object):
         self.name = name
         super().__init__()
         self.is_deleted = False
-        if name is not None and not isinstance(name, str):
-            raise CException(f"is not a name string: '{name!r}'")
         self._init_keyword_args(**kwargs)
 
     def __str__(self):
@@ -45,7 +43,7 @@ class CNamedElement(object):
             result = f"{result}: {self.name!s}"
         return result
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: dict[str, Any]):
         if legal_keyword_args is None:
             legal_keyword_args = []
         set_keyword_args(self, legal_keyword_args, **kwargs)

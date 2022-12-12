@@ -1,4 +1,5 @@
 import re
+from typing import Any, Optional
 
 from codeable_models.cexception import CException
 from codeable_models.cclassifier import CClassifier
@@ -28,7 +29,7 @@ def _check_for_classifier_and_role_name_match(classifier, role_name, association
 class CAssociation(CClassifier):
     STAR_MULTIPLICITY = -1
 
-    def __init__(self, source, target, descriptor=None, **kwargs):
+    def __init__(self, source: CClassifier, target: CClassifier, descriptor: Optional[Any]=None, **kwargs):
         """
         ``CAssociation`` is used for representing associations. Usually associations are created using the
         ``association`` method of :py:class:`.CClassifier` which calls the constructor of ``CAssociation``
@@ -212,7 +213,7 @@ class CAssociation(CClassifier):
         return self.aggregation_
 
     @aggregation.setter
-    def aggregation(self, aggregation):
+    def aggregation(self, aggregation: bool):
         if aggregation:
             self.composition_ = False
         self.aggregation_ = aggregation
@@ -631,7 +632,7 @@ class CAssociation(CClassifier):
                 raise CException(f"links of object '{obj}' have wrong multiplicity " +
                                  f"'{actual_length!s}': should be '{multiplicity_string!s}'")
 
-    def _eval_descriptor(self, descriptor):
+    def _eval_descriptor(self, descriptor: str):
         # handle name only if a ':' is found in the descriptor
         index = descriptor.find(":")
         if index != -1:

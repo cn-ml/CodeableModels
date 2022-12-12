@@ -1,3 +1,4 @@
+from typing import Any, List, Optional
 from codeable_models.cassociation import CAssociation
 from codeable_models.cobject import CObject
 from codeable_models.clink import CLink
@@ -11,7 +12,7 @@ from codeable_models.internal.commons import set_keyword_args, check_named_eleme
 
 
 class CBundlable(CNamedElement):
-    def __init__(self, name, **kwargs):
+    def __init__(self, name: Optional[str], **kwargs: dict[str, Any]):
         """``CBundlable`` is a superclass for all elements in Codeable Models that can be placed in a
         :py:class:`.CBundle`, which is used for grouping elements. Elements that can be bundled are
         :py:class:`.CClass`, :py:class:`.CObject`, etc.
@@ -28,10 +29,10 @@ class CBundlable(CNamedElement):
 
         .. image:: ../images/bundles_model.png
         """
-        self.bundles_ = []
+        self.bundles_: List[CBundle] = []
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: dict[str, Any]):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("bundles")
@@ -47,7 +48,7 @@ class CBundlable(CNamedElement):
         return list(self.bundles_)
 
     @bundles.setter
-    def bundles(self, bundles):
+    def bundles(self, bundles: Optional[List[CBundle] | CBundle]):
         if bundles is None:
             bundles = []
         for b in self.bundles_:
@@ -55,11 +56,7 @@ class CBundlable(CNamedElement):
         self.bundles_ = []
         if isinstance(bundles, CBundle):
             bundles = [bundles]
-        elif not isinstance(bundles, list):
-            raise CException(f"bundles requires a list of bundles or a bundle as input")
         for b in bundles:
-            if not isinstance(b, CBundle):
-                raise CException(f"bundles requires a list of bundles or a bundle as input")
             check_named_element_is_not_deleted(b)
             if b in self.bundles_:
                 raise CException(f"'{b.name!s}' is already a bundle of '{self.name!s}'")
@@ -82,7 +79,7 @@ class CBundlable(CNamedElement):
         self.bundles_ = []
         super().delete()
 
-    def get_connected_elements(self, **kwargs):
+    def get_connected_elements(self, **kwargs: dict[str, Any]) -> List["CBundlable"]:
         """Get all elements this element is connected to.
 
         Args:
@@ -156,15 +153,15 @@ class CBundlable(CNamedElement):
         return context.elements
 
     @staticmethod
-    def append_connected_(context, connected):
+    def append_connected_(context: "ConnectedElementsContext", connected: List["CBundlable"]):
         for c in connected:
             if c not in context.elements:
                 context.elements.append(c)
                 if c not in context.all_stop_elements:
                     c.compute_connected_(context)
 
-    def compute_connected_(self, context):
-        connected = []
+    def compute_connected_(self, context: "ConnectedElementsContext"):
+        connected: List[CBundlable] = []
         for bundle in self.bundles_:
             if bundle not in context.stop_elements_exclusive:
                 connected.append(bundle)
@@ -173,15 +170,15 @@ class CBundlable(CNamedElement):
 
 class ConnectedElementsContext(object):
     def __init__(self):
-        self.elements = []
+        self.elements: List[CBundlable] = []
         self.add_bundles = False
         self.add_associations = False
         self.add_links = False
         self.add_stereotypes = False
         self.process_bundles = False
         self.process_stereotypes = False
-        self._stop_elements_inclusive = []
-        self._stop_elements_exclusive = []
+        self._stop_elements_inclusive: List[CBundlable] = []
+        self._stop_elements_exclusive: List[CBundlable] = []
         self.all_stop_elements = []
 
     @property
@@ -189,15 +186,9 @@ class ConnectedElementsContext(object):
         return list(self._stop_elements_inclusive)
 
     @stop_elements_inclusive.setter
-    def stop_elements_inclusive(self, stop_elements_inclusive):
+    def stop_elements_inclusive(self, stop_elements_inclusive: List[CBundlable]):
         if isinstance(stop_elements_inclusive, CBundlable):
             stop_elements_inclusive = [stop_elements_inclusive]
-        if not isinstance(stop_elements_inclusive, list):
-            raise CException(f"expected one element or a list of stop elements, but got: '{stop_elements_inclusive!s}'")
-        for e in stop_elements_inclusive:
-            if not isinstance(e, CBundlable):
-                raise CException(f"expected one element or a list of stop elements, but got: " +
-                                 f"'{stop_elements_inclusive!s}' with element of wrong type: '{e!s}'")
         self._stop_elements_inclusive = stop_elements_inclusive
         self.all_stop_elements = self._stop_elements_inclusive + self._stop_elements_exclusive
 
@@ -206,14 +197,8 @@ class ConnectedElementsContext(object):
         return list(self._stop_elements_exclusive)
 
     @stop_elements_exclusive.setter
-    def stop_elements_exclusive(self, stop_elements_exclusive):
+    def stop_elements_exclusive(self, stop_elements_exclusive: List[CBundlable]):
         if isinstance(stop_elements_exclusive, CBundlable):
             stop_elements_exclusive = [stop_elements_exclusive]
-        if not isinstance(stop_elements_exclusive, list):
-            raise CException(f"expected a list of stop elements, but got: '{stop_elements_exclusive!s}'")
-        for e in stop_elements_exclusive:
-            if not isinstance(e, CBundlable):
-                raise CException(f"expected a list of stop elements, but got: '{stop_elements_exclusive!s}'" +
-                                 f" with element of wrong type: '{e!s}'")
         self._stop_elements_exclusive = stop_elements_exclusive
         self.all_stop_elements = self._stop_elements_inclusive + self._stop_elements_exclusive
