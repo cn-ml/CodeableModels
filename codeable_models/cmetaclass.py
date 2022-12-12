@@ -1,7 +1,9 @@
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, Iterable, List, Optional
+from codeable_models.cbundlable import ConnectedElementsContext
 import codeable_models.cclass as cclass
 from codeable_models.cclassifier import CClassifier
 from codeable_models.cexception import CException
+from codeable_models.cstereotype import CStereotype
 from codeable_models.internal.commons import check_is_cclass
 from codeable_models.internal.stereotype_holders import CStereotypesHolder
 
@@ -191,7 +193,7 @@ class CMetaclass(CClassifier):
                     if i.get_value(attrName, self) is None:
                         i.set_value(attrName, attr.default, self)
 
-    def _remove_attribute_values_of_classifier(self, attributes_to_keep):
+    def _remove_attribute_values_of_classifier(self, attributes_to_keep: Iterable[str]):
         for i in self.all_classes:
             for attrName in self.attribute_names:
                 if attrName not in attributes_to_keep:
@@ -212,9 +214,9 @@ class CMetaclass(CClassifier):
         """
         return super(CMetaclass, self).association(target, descriptor, **kwargs)
 
-    def compute_connected_(self, context):
+    def compute_connected_(self, context: ConnectedElementsContext):
         super().compute_connected_(context)
-        connected = []
+        connected: List[CStereotype] = []
         for s in self.stereotypes:
             if s not in context.stop_elements_exclusive:
                 connected.append(s)

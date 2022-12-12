@@ -60,7 +60,7 @@ def delete_var_value(_self: CBundlable, class_path: Sequence[CClassifier], value
         return None
 
 
-def set_var_value(_self: CBundlable, class_path: Sequence[CClassifier], values_dict: Dict[str, T], var_name: str, value: T, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
+def set_var_value(_self: CBundlable, class_path: Sequence[CClassifier], values_dict: Dict[CClassifier, Dict[str, T]], var_name: str, value: T, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
     if _self.is_deleted:
         raise CException(f"can't set '{var_name!s}' on deleted element")
     attribute = _get_and_check_var_classifier(_self, class_path, var_name, value_kind, classifier)
@@ -71,19 +71,13 @@ def set_var_value(_self: CBundlable, class_path: Sequence[CClassifier], values_d
         values_dict[attribute.classifier] = {var_name: value}
 
 
-def get_var_value(_self: CObject, class_path: Sequence[CClassifier], values_dict: Dict[Any, Any], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
+def get_var_value(_self: CObject, class_path: Sequence[CClassifier], values_dict: Dict[CClassifier, Dict[str, T]], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None) -> Optional[T]:
     if _self.is_deleted:
         raise CException(f"can't get '{var_name!s}' on deleted element")
     attribute = _get_and_check_var_classifier(_self, class_path, var_name, value_kind, classifier)
-    try:
-        values_of_classifier = values_dict[attribute.classifier]
-    except KeyError:
-        return None
-    try:
-        return values_of_classifier[var_name]
-    except KeyError:
-        return None
-
+    if attribute.classifier is None:
+        raise Exception("Attribute has no classifier!")
+    return values_dict.get(attribute.classifier, {}).get(var_name, None)
 
 def get_var_values(class_path: Sequence[CClassifier], values_dict: Dict[Any, Any]):
     result: Dict[Any, Any] = {}
@@ -95,7 +89,7 @@ def get_var_values(class_path: Sequence[CClassifier], values_dict: Dict[Any, Any
     return result
 
 
-def set_var_values(_self: CElementType | CStereotype, new_values: Optional[Dict[Any, Any]], values_kind: VarValueKind):
+def set_var_values(_self: CElementType | CStereotype | CObject, new_values: Optional[Dict[Any, Any]], values_kind: VarValueKind):
     if new_values is None:
         new_values = {}
     if not isinstance(new_values, dict):

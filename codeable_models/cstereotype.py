@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import Iterable, List, Optional
 from codeable_models.cbundlable import CBundlable
 from codeable_models.cclass import CClass
 from codeable_models.clink import CLink
@@ -184,7 +184,7 @@ class CStereotype(CClassifier):
                         if i.get_tagged_value(attrName, self) is None:
                             i.set_tagged_value(attrName, attr.default, self)
 
-    def _remove_attribute_values_of_classifier(self, attributes_to_keep):
+    def _remove_attribute_values_of_classifier(self, attributes_to_keep: Iterable[str]):
         for i in self.extended_instances_:
             for attrName in self.attribute_names:
                 if attrName not in attributes_to_keep:

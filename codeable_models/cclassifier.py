@@ -1,7 +1,7 @@
-from typing import Dict, Optional, Set, Unpack
+from typing import Dict, Iterable, Optional, Set, Unpack
 from codeable_models.cattribute import CAttribute
 from codeable_models.cbundlable import CBundlable, CBundlableKwargs, ConnectedElementsContext
-from codeable_models.cenum import CEnum
+from codeable_models.cenum import AttributeValueType, CEnum
 from codeable_models.internal.commons import *
 
 
@@ -115,7 +115,7 @@ class CClassifier(CBundlable):
         """
         return list(self.attributes_.values())
 
-    def _set_attribute(self, name, value):
+    def _set_attribute(self, name: str, value: AttributeValueType):
         if name in self.attributes_.keys():
             raise CException(f"duplicate attribute name: '{name!s}'")
         if isinstance(value, CAttribute):
@@ -132,15 +132,15 @@ class CClassifier(CBundlable):
         self.attributes_.update({name: attr})
 
     @attributes.setter
-    def attributes(self, attribute_descriptions):
+    def attributes(self, attribute_descriptions: Optional[Dict[str, AttributeValueType]]):
         if attribute_descriptions is None:
             attribute_descriptions = {}
         self._remove_attribute_values_of_classifier(attribute_descriptions.keys())
         self.attributes_ = {}
         if not isinstance(attribute_descriptions, dict):
             raise CException(f"malformed attribute description: '{attribute_descriptions!s}'")
-        for attributeName in attribute_descriptions:
-            self._set_attribute(attributeName, attribute_descriptions[attributeName])
+        for attributeName, value in attribute_descriptions.items():
+            self._set_attribute(attributeName, value)
         self.update_default_values_of_classifier_()
 
     @property
@@ -167,10 +167,10 @@ class CClassifier(CBundlable):
         except KeyError:
             return None
 
-    def _remove_attribute_values_of_classifier(self, attributes_to_keep):
+    def _remove_attribute_values_of_classifier(self, attributes_to_keep: Iterable[str]):
         raise CException("should be overridden by subclasses to update defaults on instances")
 
-    def update_default_values_of_classifier_(self, attribute=None):
+    def update_default_values_of_classifier_(self, attribute: Optional[CAttribute]=None):
         raise CException("should be overridden by subclasses to update defaults on instances")
 
     def _check_same_type_as_self(self, cl):

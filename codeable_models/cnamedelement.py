@@ -1,9 +1,12 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, TypedDict, Unpack
 from codeable_models.internal.commons import set_keyword_args
 
 
+class CNamedElementKwargs(TypedDict, total=False):
+    pass
+
 class CNamedElement(object):
-    def __init__(self, name: Optional[str], **kwargs: dict[str, Any]):
+    def __init__(self, name: Optional[str], **kwargs: Unpack[CNamedElementKwargs]):
         """CNamedElement is the superclass for all named elements in Codeable Models, such as CClass, CObject, and
         so on. The class is usually not used directly.
 
@@ -43,7 +46,7 @@ class CNamedElement(object):
             result = f"{result}: {self.name!s}"
         return result
 
-    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: dict[str, Any]):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
         if legal_keyword_args is None:
             legal_keyword_args = []
         set_keyword_args(self, legal_keyword_args, **kwargs)

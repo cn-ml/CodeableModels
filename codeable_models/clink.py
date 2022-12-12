@@ -298,8 +298,10 @@ def _get_target_objects_from_definition(source_obj: CObject, targets: Optional[C
             raise CException(f"link target '{t!s}' is not an object, class, or link")
     return new_targets
 
-CheckedLinkDefinitions = Dict[CObject, List[CObject]]
-LinkDefinitions = Dict[CObject, List[CObject] | CObject] | CheckedLinkDefinitions
+CheckedTargetDefinitions = List[CObject]
+TargetDefinitions = Optional[List[CObject] | CObject] | CheckedTargetDefinitions
+CheckedLinkDefinitions = Dict[CObject, CheckedTargetDefinitions]
+LinkDefinitions = Dict[CObject, Optional[List[CObject] | CObject]] | CheckedLinkDefinitions
 
 def _check_link_definition_and_replace_classes(link_definitions: LinkDefinitions) -> CheckedLinkDefinitions:
     if not isinstance(link_definitions, dict):

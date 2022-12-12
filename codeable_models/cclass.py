@@ -1,4 +1,4 @@
-from typing import Any, Dict, List, Optional, Unpack
+from typing import Any, Dict, Iterable, List, Optional, Unpack
 from codeable_models.cclassifier import CClassifier, CClassifierKwargs
 from codeable_models.cexception import CException
 from codeable_models import CMetaclass
@@ -191,7 +191,7 @@ class CClass(CClassifier):
                     if i.get_value(attrName, self) is None:
                         i.set_value(attrName, attr.default, self)
 
-    def _remove_attribute_values_of_classifier(self, attributes_to_keep):
+    def _remove_attribute_values_of_classifier(self, attributes_to_keep: Iterable[str]):
         for i in self.all_objects:
             for attrName in self.attribute_names:
                 if attrName not in attributes_to_keep:

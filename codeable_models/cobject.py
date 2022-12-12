@@ -1,13 +1,14 @@
 from typing import Dict, Optional, Unpack
 from codeable_models.cassociation import CAssociation
-from codeable_models.cbundlable import CBundlable, CBundlableKwargs
+from codeable_models.cbundlable import CBundlable, CBundlableKwargs, ConnectedElementsContext
+from codeable_models.clink import DeleteLinksKwargs, LinksKwargs, TargetDefinitions
 from codeable_models.cmetaclass import CMetaclass
 from codeable_models.internal.commons import *
 from codeable_models.internal.var_values import delete_var_value, set_var_value, get_var_value, get_var_values, \
     set_var_values, VarValueKind
 
 class CObjectKwargs(CBundlableKwargs, total=False):
-    class_object_class_: CClass
+    class_object_class_: CObject
     values: Dict[str, Any]
 
 class CObject(CBundlable):
@@ -57,7 +58,7 @@ class CObject(CBundlable):
         inherits from :py:class:`.CObject`).
 
         """
-        self.class_object_class_: Optional[CObject | CClass] = None
+        self.class_object_class_: Optional[CObject] = None
         if 'class_object_class_' in kwargs:
             class_object_class = kwargs.pop('class_object_class_', None)
             self.class_object_class_ = class_object_class
@@ -72,7 +73,7 @@ class CObject(CBundlable):
         if cl is not None:
             check_named_element_is_not_deleted(cl)
         self.classifier_: CClass = cl
-        self.attribute_values = {}
+        self.attribute_values: Dict[CClassifier, Dict[str, CObject]] = {}
         super().__init__(name, **kwargs)
         if self.class_object_class_ is None:
             # don't add instance if this is a class object or association
@@ -84,7 +85,7 @@ class CObject(CBundlable):
         self.links_: List[CLink] = []
 
         if values is not None:
-            self.values: dict[str, Any] = values
+            self.values = values
 
     def init_attribute_values_(self):
         # init default values of attributes
@@ -201,7 +202,7 @@ class CObject(CBundlable):
         return get_var_value(self, self.classifier.class_path, self.attribute_values, attribute_name,
                              VarValueKind.ATTRIBUTE_VALUE, classifier)
 
-    def delete_value(self, attribute_name, classifier=None):
+    def delete_value(self, attribute_name: str, classifier: Optional[CClassifier]=None):
         """Delete the value of an attribute with the given ``attribute_name``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its classifier.
@@ -218,7 +219,7 @@ class CObject(CBundlable):
         return delete_var_value(self, self.classifier.class_path, self.attribute_values, attribute_name,
                                 VarValueKind.ATTRIBUTE_VALUE, classifier)
 
-    def set_value(self, attribute_name: str, value, classifier=None):
+    def set_value(self, attribute_name: str, value: CObject, classifier: Optional[CClass]=None):
         """Set the value of an attribute with the given ``attribute_name`` to ``value``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its classifier.
@@ -247,12 +248,12 @@ class CObject(CBundlable):
         return get_var_values(self.classifier.class_path, self.attribute_values)
 
     @values.setter
-    def values(self, new_values):
+    def values(self, new_values: Dict[str, Any]):
         if self.is_deleted:
             raise CException(f"can't set values on deleted {self._get_kind_str()!s}")
         set_var_values(self, new_values, VarValueKind.ATTRIBUTE_VALUE)
 
-    def remove_value_(self, attribute_name, classifier):
+    def remove_value_(self, attribute_name: str, classifier: CClass):
         try:
             self.attribute_values[classifier].pop(attribute_name, None)
         except KeyError:
@@ -293,7 +294,7 @@ class CObject(CBundlable):
                 association_links.extend([link])
         return association_links
 
-    def get_linked(self, **kwargs):
+    def get_linked(self, **kwargs: Unpack[LinksKwargs]):
         """Method to get the linked objects defined for this object filtered using criteria specified in kwargs.
 
         Args:
@@ -313,7 +314,7 @@ class CObject(CBundlable):
         from codeable_models.clink import LinkKeywordsContext
         context = LinkKeywordsContext(**kwargs)
 
-        result = []
+        result: List[CObject] = []
         for link in self.links_:
             append = True
             if context.association is not None:
@@ -336,7 +337,7 @@ class CObject(CBundlable):
                     result.append(opposite.class_object_class_)
         return result
 
-    def add_links(self, links, **kwargs):
+    def add_links(self, links: TargetDefinitions, **kwargs: Unpack[LinksKwargs]):
         """
         Add links on this object (which are based on associations defined on the object's class).
         Uses the function  :py:func:`.add_links`. That is, it is possible to use the following equivalently::
@@ -354,7 +355,7 @@ class CObject(CBundlable):
         from codeable_models.clink import add_links
         return add_links({self: links}, **kwargs)
 
-    def delete_links(self, links, **kwargs):
+    def delete_links(self, links: TargetDefinitions, **kwargs: Unpack[DeleteLinksKwargs]):
         """
         Delete links on this object (which are based on associations defined on the object's class).
         Uses the function  :py:func:`.delete_links`. That is, it is possible
@@ -373,9 +374,9 @@ class CObject(CBundlable):
         from codeable_models.clink import delete_links
         return delete_links({self: links}, **kwargs)
 
-    def compute_connected_(self, context):
+    def compute_connected_(self, context: ConnectedElementsContext):
         super().compute_connected_(context)
-        connected = []
+        connected: List[CObject] = []
         for link in self.links_:
             opposite = link.get_opposite_object(self)
             if opposite not in context.stop_elements_exclusive:

@@ -19,8 +19,8 @@ class CAttribute(object):
                 - The ``default`` kwarg accepts a default value in the form acceptable to the ``default`` property.
 
         """
-        self.name_ = None
-        self.classifier_: Optional[CClassifier] = None
+        self.name_: Optional[str] = None
+        self.classifier_: CClassifier = None
         self.type_ = None
         self.default_ = None
         set_keyword_args(self, ["type", "default"], **kwargs)
@@ -94,7 +94,7 @@ class CAttribute(object):
         return self.default_
 
     @default.setter
-    def default(self, default: Optional[object]):
+    def default(self, default: Optional[CObject]):
         if default is None:
             self.default_ = None
             return
