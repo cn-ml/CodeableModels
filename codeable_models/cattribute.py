@@ -1,3 +1,5 @@
+from typing import Optional, Type
+from codeable_models.cenum import AttributeValueType
 from codeable_models.internal.commons import *
 
 
@@ -18,7 +20,7 @@ class CAttribute(object):
 
         """
         self.name_ = None
-        self.classifier_ = None
+        self.classifier_: Optional[CClassifier] = None
         self.type_ = None
         self.default_ = None
         set_keyword_args(self, ["type", "default"], **kwargs)
@@ -62,7 +64,7 @@ class CAttribute(object):
         self.check_attribute_type_is_not_deleted()
         return self.type_
 
-    def _wrong_default_exception(self, default, attribute_type):
+    def _wrong_default_exception(self, default: object, attribute_type: Type[Any]):
         raise CException(f"default value '{default!s}' incompatible with attribute's type '{attribute_type!s}'")
 
     @type.setter
@@ -79,7 +81,7 @@ class CAttribute(object):
             else:
                 if not isinstance(self.default_, new_type):
                     self._wrong_default_exception(self.default_, new_type)
-        self.type_ = new_type
+        self.type_: type = new_type
 
     @property
     def default(self):
@@ -92,7 +94,7 @@ class CAttribute(object):
         return self.default_
 
     @default.setter
-    def default(self, default):
+    def default(self, default: Optional[object]):
         if default is None:
             self.default_ = None
             return
@@ -119,7 +121,7 @@ class CAttribute(object):
         if self.classifier_ is not None:
             self.classifier_.update_default_values_of_classifier_(self)
 
-    def check_attribute_value_type_(self, name, value):
+    def check_attribute_value_type_(self, name: str, value: AttributeValueType):
         attr_type = get_attribute_type(value)
         if attr_type is None:
             raise CException(f"value for attribute '{name!s}' is not a known attribute type")

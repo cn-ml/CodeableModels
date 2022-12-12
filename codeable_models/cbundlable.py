@@ -1,4 +1,4 @@
-from typing import Any, List, Optional
+from typing import Any, List, Optional, TypedDict, Unpack
 from codeable_models.cassociation import CAssociation
 from codeable_models.cobject import CObject
 from codeable_models.clink import CLink
@@ -10,9 +10,11 @@ from codeable_models.cnamedelement import CNamedElement
 from codeable_models.cstereotype import CStereotype
 from codeable_models.internal.commons import set_keyword_args, check_named_element_is_not_deleted
 
+class CBundlableKwargs(TypedDict):
+    pass
 
 class CBundlable(CNamedElement):
-    def __init__(self, name: Optional[str], **kwargs: dict[str, Any]):
+    def __init__(self, name: Optional[str], **kwargs: Unpack[CBundlableKwargs]):
         """``CBundlable`` is a superclass for all elements in Codeable Models that can be placed in a
         :py:class:`.CBundle`, which is used for grouping elements. Elements that can be bundled are
         :py:class:`.CClass`, :py:class:`.CObject`, etc.

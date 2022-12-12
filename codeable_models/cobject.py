@@ -1,13 +1,17 @@
+from typing import Dict, Optional, Unpack
 from codeable_models.cassociation import CAssociation
-from codeable_models.cbundlable import CBundlable
+from codeable_models.cbundlable import CBundlable, CBundlableKwargs
 from codeable_models.cmetaclass import CMetaclass
 from codeable_models.internal.commons import *
 from codeable_models.internal.var_values import delete_var_value, set_var_value, get_var_value, get_var_values, \
     set_var_values, VarValueKind
 
+class CObjectKwargs(CBundlableKwargs, total=False):
+    class_object_class_: CObject
+    values: Dict[str, Any]
 
 class CObject(CBundlable):
-    def __init__(self, cl, name=None, **kwargs):
+    def __init__(self, cl: CClass, name: Optional[str]=None, **kwargs: Unpack[CObjectKwargs]):
         """``CObject`` is used to define objects. Objects in Codeable Models are instances of classes (defined
         using :py:class:`.CClass`).
 
@@ -53,7 +57,7 @@ class CObject(CBundlable):
         inherits from :py:class:`.CObject`).
 
         """
-        self.class_object_class_ = None
+        self.class_object_class_: Optional[CObject] = None
         if 'class_object_class_' in kwargs:
             class_object_class = kwargs.pop('class_object_class_', None)
             self.class_object_class_ = class_object_class
@@ -67,7 +71,7 @@ class CObject(CBundlable):
 
         if cl is not None:
             check_named_element_is_not_deleted(cl)
-        self.classifier_ = cl
+        self.classifier_: CClassifier = cl
         self.attribute_values = {}
         super().__init__(name, **kwargs)
         if self.class_object_class_ is None:
@@ -77,10 +81,10 @@ class CObject(CBundlable):
             # do not init default attributes of a class object, the class constructor 
             # does it after stereotype instances are added, who defining defaults first 
             self.init_attribute_values_()
-        self.links_ = []
+        self.links_: List[CLink] = []
 
         if values is not None:
-            self.values = values
+            self.values: dict[str, Any] = values
 
     def init_attribute_values_(self):
         # init default values of attributes
@@ -135,7 +139,7 @@ class CObject(CBundlable):
         for link in links:
             link.delete()
 
-    def instance_of(self, classifier):
+    def instance_of(self, classifier: CClassifier):
         """Tests whether this object is an instance of ``classifier`` or not.
 
         Args:
@@ -180,7 +184,7 @@ class CObject(CBundlable):
             kind_str = "class"
         return kind_str
 
-    def get_value(self, attribute_name, classifier=None):
+    def get_value(self, attribute_name: str, classifier: Optional[CClassifier]=None):
         """Get the value of an attribute with the given ``attribute_name``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its classifier.
@@ -263,7 +267,7 @@ class CObject(CBundlable):
     @property
     def linked(self):
         """list[CObject]: Getter for getting the linked objects defined for this object."""
-        result = []
+        result: List[CObject] = []
         for link in self.links_:
             opposite = link.get_opposite_object(self)
             if opposite.class_object_class_ is None:

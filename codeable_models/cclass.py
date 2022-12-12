@@ -1,6 +1,9 @@
+from typing import Any, Dict, List, Optional
 from codeable_models.cclassifier import CClassifier
 from codeable_models.cexception import CException
+from codeable_models import CMetaclass
 from codeable_models.cobject import CObject
+from codeable_models.cstereotype import CStereotype
 from codeable_models.internal.commons import check_is_cmetaclass, check_is_cobject, \
     check_named_element_is_not_deleted
 from codeable_models.internal.stereotype_holders import CStereotypeInstancesHolder
@@ -9,7 +12,7 @@ from codeable_models.internal.var_values import delete_var_value, set_var_value,
 
 
 class CClass(CClassifier):
-    def __init__(self, metaclass, name=None, **kwargs):
+    def __init__(self, metaclass: CMetaclass, name: Optional[str]=None, **kwargs: dict[str, Any]):
         """``CClass`` is used to define classes. Classes in Codeable Models are instances of metaclasses (defined
         using :py:class:`.CMetaclass`).
 
@@ -69,16 +72,16 @@ class CClass(CClassifier):
         Each class can have stereotype instances of the stereotypes
         defined on its meta-class.
         """
-        self.metaclass_ = None
+        self.metaclass_: Optional[CMetaclass] = None
         self.metaclass = metaclass
-        self.objects_ = []
+        self.objects_: List[CObject] = []
         self.class_object_ = CObject(self.metaclass, name, class_object_class_=self)
         self.stereotype_instances_holder = CStereotypeInstancesHolder(self)
-        self.tagged_values_ = {}
+        self.tagged_values_: Dict[str, Any] = {}
         super().__init__(name, **kwargs)
         self.class_object_.init_attribute_values_()
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Dict[str, Any]):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("stereotype_instances")
@@ -97,12 +100,11 @@ class CClass(CClassifier):
         return self.metaclass_
 
     @metaclass.setter
-    def metaclass(self, mcl):
+    def metaclass(self, mcl: CMetaclass):
         check_is_cmetaclass(mcl)
         if self.metaclass_ is not None:
             self.metaclass_.remove_class(self)
-        if mcl is not None:
-            check_named_element_is_not_deleted(mcl)
+        check_named_element_is_not_deleted(mcl)
         self.metaclass_ = mcl
         self.metaclass_.add_class(self)
 
@@ -121,13 +123,13 @@ class CClass(CClassifier):
                 all_objects.append(cl)
         return all_objects
 
-    def add_object_(self, obj):
+    def add_object_(self, obj: CObject):
         if obj in self.objects_:
             raise CException(f"object '{obj!s}' is already an instance of the class '{self!s}'")
         check_is_cobject(obj)
         self.objects_.append(obj)
 
-    def remove_object_(self, obj):
+    def remove_object_(self, obj: CObject):
         if obj not in self.objects_:
             raise CException(f"can't remove object '{obj!s}'' from class '{self!s}': not an instance")
         self.objects_.remove(obj)
@@ -154,14 +156,15 @@ class CClass(CClassifier):
             si.extended_instances_.remove(self)
         self.stereotype_instances_holder.stereotypes_ = []
 
-        self.metaclass.remove_class(self)
+        if self.metaclass is not None:
+            self.metaclass.remove_class(self)
         self.metaclass_ = None
 
         super().delete()
 
         self.class_object_.delete()
 
-    def instance_of(self, classifier):
+    def instance_of(self, classifier: CClassifier):
         """Returns ``True`` if this class is instance of the ``classifier``, else ``False``.
 
         Args:
@@ -342,7 +345,7 @@ class CClass(CClassifier):
                                 self.tagged_values_,
                                 name, VarValueKind.TAGGED_VALUE, stereotype)
 
-    def set_tagged_value(self, name, value, stereotype=None):
+    def set_tagged_value(self, name: str, value: Any, stereotype: Optional[CStereotype]=None):
         """Set the tagged value of a stereotype attribute with the given ``name`` to ``value``.  Optionally the
         stereotype to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its stereotype.

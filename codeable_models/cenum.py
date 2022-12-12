@@ -1,9 +1,15 @@
-from codeable_models.cbundlable import CBundlable
+from typing import Any, List, Optional, Unpack
+from codeable_models.cbundlable import CBundlable, CBundlableKwargs
 from codeable_models.cexception import CException
 
 
+class CEnumKwargs(CBundlableKwargs):
+    pass
+
+AttributeValueType = Any
+
 class CEnum(CBundlable):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name: Optional[str]=None, **kwargs: Unpack[CEnumKwargs]):
         """``CEnum`` is used for defining enumerations.
 
         **Superclasses:**  :py:class:`.CBundlable`
@@ -26,10 +32,10 @@ class CEnum(CBundlable):
         Another example is provided in the document :ref:`class_attributes`.
 
         """
-        self.values_ = []
+        self.values_: List[AttributeValueType] = []
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("values")
@@ -42,14 +48,14 @@ class CEnum(CBundlable):
         return list(self.values_)
 
     @values.setter
-    def values(self, values):
+    def values(self, values: Optional[List[AttributeValueType]]):
         if values is None:
             values = []
         if not isinstance(values, list):
             raise CException(f"an enum needs to be initialized with a list of values, but got: '{values!s}'")
         self.values_ = values
 
-    def is_legal_value(self, value):
+    def is_legal_value(self, value: AttributeValueType):
         if value in self.values_:
             return True
         return False

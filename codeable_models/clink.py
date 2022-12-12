@@ -1,3 +1,4 @@
+from typing import Dict
 from codeable_models.cobject import CObject
 from codeable_models.internal.commons import *
 from codeable_models.internal.stereotype_holders import CStereotypeInstancesHolder
@@ -6,7 +7,7 @@ from codeable_models.internal.var_values import delete_var_value, set_var_value,
 
 
 class CLink(CObject):
-    def __init__(self, association, source_object, target_object, **kwargs):
+    def __init__(self, association: CAssociation, source_object: CObject, target_object: CObject, **kwargs: Dict[str, Any]):
         """``CLink`` is used to define object links.
         Objects can be linked if their respective classes have an association.
         When linking objects, the association definitions are checked for correctness.
@@ -73,7 +74,7 @@ class CLink(CObject):
         self.label = None
         self.association = association
         self.stereotype_instances_holder = CStereotypeInstancesHolder(self)
-        self.tagged_values_ = {}
+        self.tagged_values_: Dict[Any, Any] = {}
         super().__init__(association)
         self._init_keyword_args(**kwargs)
 
@@ -90,7 +91,7 @@ class CLink(CObject):
         legal_keyword_args.append("stereotype_instances")
         set_keyword_args(self, legal_keyword_args, **kwargs)
 
-    def get_opposite_object(self, cobject):
+    def get_opposite_object(self, cobject: CObject | CClass):
         """Given an object, this method returns the opposite in the link,
         i.e. the source if ``object`` is the
         target, and vice versa. Raises an exception if ``object`` is neither source nor target.
@@ -369,7 +370,7 @@ def _determine_matching_association_and_set_context_info(context, source, target
             f"and targets '{[str(item) for item in targets]!s}'")
 
 
-def link_objects_(context, source, targets):
+def link_objects_(context: "LinkKeywordsContext", source, targets):
     new_links = []
     source_obj = source
     if isinstance(source, CClass):

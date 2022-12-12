@@ -1,3 +1,5 @@
+from typing import List
+from codeable_models.cbundlable import CBundlable
 from codeable_models.cclass import CClass
 from codeable_models.clink import CLink
 from codeable_models.cassociation import CAssociation
@@ -5,6 +7,7 @@ from codeable_models.cclassifier import CClassifier
 from codeable_models.cmetaclass import CMetaclass
 from codeable_models.cexception import CException
 from codeable_models.internal.commons import check_is_cassociation, check_is_cmetaclass, check_named_element_is_not_deleted
+from codeable_models.internal.stereotype_holders import CElementType
 from codeable_models.internal.var_values import delete_var_value, set_var_value, get_var_value, get_var_values, \
     set_var_values, VarValueKind
 
@@ -86,7 +89,7 @@ class CStereotype(CClassifier):
         the association, respectively.
         """
         self.extended_ = []
-        self.extended_instances_ = []
+        self.extended_instances_: List[CClass] = []
         self.default_values_ = {}
         super().__init__(name, **kwargs)
 
@@ -166,7 +169,7 @@ class CStereotype(CClassifier):
             return
         for e in self.extended_:
             e.stereotypes_holder.stereotypes_.remove(self)
-        self.extended_ = []
+        self.extended_: List[CMetaclass] = []
         super().delete()
 
     def update_default_values_of_classifier_(self, attribute=None):
@@ -187,7 +190,7 @@ class CStereotype(CClassifier):
                 if attrName not in attributes_to_keep:
                     i.delete_tagged_value(attrName, self)
 
-    def is_metaclass_extended_by_this_stereotype_(self, metaclass):
+    def is_metaclass_extended_by_this_stereotype_(self, metaclass: CMetaclass):
         if metaclass in self.extended_:
             return True
         for mcSuperclass in metaclass.get_all_superclasses_():
@@ -195,8 +198,8 @@ class CStereotype(CClassifier):
                 return True
         return False
 
-    def is_element_extended_by_stereotype_(self, element):
-        if isinstance(element, CClass):
+    def is_element_extended_by_stereotype_(self, element: CElementType):
+        if isinstance(element, CClass) and element.metaclass is not None:
             if self.is_metaclass_extended_by_this_stereotype_(element.metaclass):
                 return True
             for superclass in self.get_all_superclasses_():

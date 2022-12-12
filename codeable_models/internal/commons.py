@@ -19,7 +19,7 @@ def get_attribute_type(attr: object):
     elif isinstance(attr, float):
         return float
     elif isinstance(attr, list):
-        return list
+        return list[Any]
     elif isinstance(attr, CObject):
         check_named_element_is_not_deleted(attr)
         return attr.classifier

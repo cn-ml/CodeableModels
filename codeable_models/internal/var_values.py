@@ -1,13 +1,18 @@
+from enum import Enum
+from optparse import Option
+from typing import Dict, Optional, TypeVar
 from codeable_models.internal.commons import *
+from codeable_models.internal.stereotype_holders import CElementType
 
 
-class VarValueKind:
+class VarValueKind(Enum):
     ATTRIBUTE_VALUE = 1
     TAGGED_VALUE = 2
     DEFAULT_VALUE = 3
 
+T = TypeVar("T")
 
-def _get_var_unknown_exception(value_kind, entity, var_name):
+def _get_var_unknown_exception(value_kind: VarValueKind, entity: object, var_name: str):
     if value_kind == VarValueKind.TAGGED_VALUE:
         value_kind_str = "tagged value"
     elif value_kind == VarValueKind.ATTRIBUTE_VALUE or value_kind == VarValueKind.DEFAULT_VALUE:
@@ -23,7 +28,7 @@ def _get_var_unknown_exception(value_kind, entity, var_name):
     return CException(f"{value_kind_str!s} '{var_name!s}' unknown for '{entity!s}'")
 
 
-def _get_and_check_var_classifier(_self, class_path, var_name, value_kind, classifier=None):
+def _get_and_check_var_classifier(_self: CBundlable, class_path: List[CStereotype], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None) -> CAttribute:
     if classifier is None:
         # search on a class path
         for cl in class_path:
@@ -39,7 +44,7 @@ def _get_and_check_var_classifier(_self, class_path, var_name, value_kind, class
         return attribute
 
 
-def delete_var_value(_self, class_path, values_dict, var_name, value_kind, classifier=None):
+def delete_var_value(_self: CClass, class_path: List[CStereotype], values_dict: Dict[Any, Any], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
     if _self.is_deleted:
         raise CException(f"can't delete '{var_name!s}' on deleted element")
     attribute = _get_and_check_var_classifier(_self, class_path, var_name, value_kind, classifier)
@@ -55,7 +60,7 @@ def delete_var_value(_self, class_path, values_dict, var_name, value_kind, class
         return None
 
 
-def set_var_value(_self, class_path, values_dict, var_name, value, value_kind, classifier=None):
+def set_var_value(_self: CBundlable, class_path: List[CStereotype], values_dict: Dict[str, T], var_name: str, value: T, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
     if _self.is_deleted:
         raise CException(f"can't set '{var_name!s}' on deleted element")
     attribute = _get_and_check_var_classifier(_self, class_path, var_name, value_kind, classifier)
@@ -66,7 +71,7 @@ def set_var_value(_self, class_path, values_dict, var_name, value, value_kind, c
         values_dict[attribute.classifier] = {var_name: value}
 
 
-def get_var_value(_self, class_path, values_dict, var_name, value_kind, classifier=None):
+def get_var_value(_self: CObject, class_path: List[CClassifier], values_dict: Dict[Any, Any], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
     if _self.is_deleted:
         raise CException(f"can't get '{var_name!s}' on deleted element")
     attribute = _get_and_check_var_classifier(_self, class_path, var_name, value_kind, classifier)
@@ -80,8 +85,8 @@ def get_var_value(_self, class_path, values_dict, var_name, value_kind, classifi
         return None
 
 
-def get_var_values(class_path, values_dict):
-    result = {}
+def get_var_values(class_path: List[CClassifier], values_dict: Dict[Any, Any]):
+    result: Dict[Any, Any] = {}
     for cl in class_path:
         if cl in values_dict:
             for attrName in values_dict[cl]:
@@ -90,7 +95,7 @@ def get_var_values(class_path, values_dict):
     return result
 
 
-def set_var_values(_self, new_values, values_kind):
+def set_var_values(_self: CElementType | CStereotype, new_values: Optional[Dict[Any, Any]], values_kind: VarValueKind):
     if new_values is None:
         new_values = {}
     if not isinstance(new_values, dict):

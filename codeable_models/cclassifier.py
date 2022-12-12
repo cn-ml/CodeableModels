@@ -1,3 +1,4 @@
+from typing import Dict, Optional, Set
 from codeable_models.cattribute import CAttribute
 from codeable_models.cbundlable import CBundlable, ConnectedElementsContext
 from codeable_models.cenum import CEnum
@@ -50,13 +51,13 @@ class CClassifier(CBundlable):
         the methods of ``CClassifier``.
 
         """
-        self.superclasses_ = []
-        self.subclasses_ = []
-        self.attributes_ = {}
+        self.superclasses_: List[CClass] = []
+        self.subclasses_: List[CClass] = []
+        self.attributes_: Dict[str, CAttribute] = {}
         self.associations_ = []
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Dict[str, Any]):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("attributes")
@@ -147,7 +148,7 @@ class CClassifier(CBundlable):
         """
         return list(self.attributes_.keys())
 
-    def get_attribute(self, attribute_name):
+    def get_attribute(self, attribute_name: str):
         """Returns the :py:class:`.CAttribute` object that conforms to the provided attribute name. If none is found,
         ``None`` is returned.
 
@@ -224,7 +225,7 @@ class CClassifier(CBundlable):
         on the inheritance hierarchy."""
         return self.get_all_subclasses_()
 
-    def is_classifier_of_type(self, classifier):
+    def is_classifier_of_type(self, classifier: CClassifier):
         """Checks if the classifier conforms to the provided classifier's type.
 
         Args:
@@ -240,10 +241,10 @@ class CClassifier(CBundlable):
             return True
         return False
 
-    def get_all_superclasses_(self, iterated_classes=None):
+    def get_all_superclasses_(self, iterated_classes: Optional[Set[CClassifier]]=None):
         if iterated_classes is None:
             iterated_classes = set()
-        result = set()
+        result: Set[CClass] = set()
         for sc in self.superclasses:
             if sc not in iterated_classes:
                 iterated_classes.add(sc)
@@ -251,10 +252,10 @@ class CClassifier(CBundlable):
                 result.update(sc.get_all_superclasses_(iterated_classes))
         return result
 
-    def get_all_subclasses_(self, iterated_classes=None):
+    def get_all_subclasses_(self, iterated_classes: Optional[Set[CClassifier]]=None):
         if iterated_classes is None:
             iterated_classes = set()
-        result = set()
+        result: Set[CClass] = set()
         for sc in self.subclasses:
             if sc not in iterated_classes:
                 iterated_classes.add(sc)
@@ -262,7 +263,7 @@ class CClassifier(CBundlable):
                 result.update(sc.get_all_subclasses_(iterated_classes))
         return result
 
-    def has_subclass(self, classifier):
+    def has_subclass(self, classifier: CClassifier):
         """Returns ``True`` if ``classifier`` is subclass of this classifier, else ``False``.
 
         Args:
@@ -274,7 +275,7 @@ class CClassifier(CBundlable):
         """
         return classifier in self.get_all_subclasses_()
 
-    def has_superclass(self, classifier):
+    def has_superclass(self, classifier: CClassifier):
         """Returns ``True`` if ``classifier`` is superclass of this classifier, else ``False``.
 
         Args:
@@ -331,7 +332,7 @@ class CClassifier(CBundlable):
                     all_associations.extend([a])
         return all_associations
 
-    def association(self, target, descriptor=None, **kwargs):
+    def association(self, target: "CMetaclass", descriptor: Optional[str]=None, **kwargs: Dict[str, Any]):
         """Method used to create associations on this classifier.
         Returns the :py:class:`.CAssociation` that is created.
 

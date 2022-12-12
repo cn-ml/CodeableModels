@@ -1,3 +1,5 @@
+from typing import Any, Dict, List, Optional
+import codeable_models.cclass as cclass
 from codeable_models.cclassifier import CClassifier
 from codeable_models.cexception import CException
 from codeable_models.internal.commons import check_is_cclass
@@ -41,7 +43,7 @@ class CMetaclass(CClassifier):
         :py:class:`.CClass` instances. Stereotypes can extend the meta-class. If this is the case,
         those stereotypes can be used as stereotype instances on the classes of the meta-class.
         """
-        self.classes_ = []
+        self.classes_: List[cclass.CClass] = []
         self.stereotypes_holder = CStereotypesHolder(self)
         super().__init__(name, **kwargs)
 
@@ -119,7 +121,7 @@ class CMetaclass(CClassifier):
         stereotypes = self.get_stereotypes(name)
         return None if len(stereotypes) == 0 else stereotypes[0]
 
-    def add_class(self, cl):
+    def add_class(self, cl: cclass.CClass):
         """Add the class ``cl`` to the classes of this meta-class.
 
         Args:
@@ -134,7 +136,7 @@ class CMetaclass(CClassifier):
             raise CException(f"class '{cl!s}' is already a class of the metaclass '{self!s}'")
         self.classes_.append(cl)
 
-    def remove_class(self, cl):
+    def remove_class(self, cl: cclass.CClass):
         """Remove the class ``cl`` from the classes of this meta-class. Raises an exception, if ``cl`` is
         not a class derived from  this meta-class.
 
@@ -195,7 +197,7 @@ class CMetaclass(CClassifier):
                 if attrName not in attributes_to_keep:
                     i.delete_value(attrName, self)
 
-    def association(self, target, descriptor=None, **kwargs):
+    def association(self, target: "CMetaclass", descriptor: Optional[str]=None, **kwargs: Dict[str, Any]):
         """Method used to create associations on this meta-class. See documentation of method ``association``
         on :py:class:`.CClassifier` for details.
 
@@ -208,8 +210,6 @@ class CMetaclass(CClassifier):
             CAssociation: The created association.
 
         """
-        if not isinstance(target, CMetaclass):
-            raise CException(f"metaclass '{self!s}' is not compatible with association target '{target!s}'")
         return super(CMetaclass, self).association(target, descriptor, **kwargs)
 
     def compute_connected_(self, context):
