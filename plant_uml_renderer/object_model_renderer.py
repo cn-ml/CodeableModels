@@ -20,7 +20,7 @@ class ObjectModelRenderer(ModelRenderer):
         obj_name = object_.name
         if obj_name is None:
             obj_name = ""
-        if is_cclass(object_):
+        if isinstance(object_, CClass):
             object_ = object_.class_object
 
         stereotype_string = ""
@@ -86,10 +86,10 @@ class ObjectModelRenderer(ModelRenderer):
                     if link in context.excluded_links:
                         continue
                     source = link.source
-                    if is_cclass(source):
+                    if isinstance(source, CClass):
                         source = source.class_object
                     target = link.target
-                    if is_cclass(target):
+                    if isinstance(target, CClass):
                         target = target.class_object
                     if source != obj:
                         # only render links outgoing from this object
@@ -102,10 +102,10 @@ class ObjectModelRenderer(ModelRenderer):
     def render_objects(self, context, objects):
         obj_list = []
         for obj in objects:
-            if is_cclass(obj):
+            if isinstance(obj, CClass):
                 # use class objects and not classes in this renderer
                 obj_list.extend([obj.class_object_])
-            elif is_cobject(obj):
+            elif isinstance(obj, CObject):
                 obj_list.extend([obj])
             else:
                 raise CException(f"'{obj!s}' handed to object renderer is no an object or class'")

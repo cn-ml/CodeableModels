@@ -2,8 +2,9 @@ import re
 
 from codeable_models.cexception import CException
 from codeable_models.cclassifier import CClassifier
-from codeable_models.internal.commons import is_cmetaclass, is_cstereotype, is_cassociation, check_is_cmetaclass, \
-    check_is_cclass
+from codeable_models.cmetaclass import CMetaclass
+from codeable_models.cstereotype import CStereotype
+from codeable_models.internal.commons import check_is_cmetaclass, check_is_cclass
 from codeable_models.internal.stereotype_holders import CStereotypesHolder, CStereotypeInstancesHolder
 from codeable_models.internal.var_values import get_var_value, VarValueKind, delete_var_value, set_var_value, \
     get_var_values, set_var_values
@@ -194,7 +195,7 @@ class CAssociation(CClassifier):
             raise CException("can only get opposite if either source or target classifier is provided")
 
     def is_metaclass_association_(self):
-        if is_cmetaclass(self.source):
+        if isinstance(self.source, CMetaclass):
             return True
         return False
 
@@ -550,7 +551,7 @@ class CAssociation(CClassifier):
     @derived_from.setter
     def derived_from(self, metaclass_association):
         if metaclass_association is not None:
-            if not is_cassociation(metaclass_association):
+            if not isinstance(metaclass_association, CAssociation):
                 raise CException(f"'{metaclass_association!s}' is not an association")
             self._check_association_class_derived_from_association_metaclass(self.source, metaclass_association.source,
                                                                              "source")
@@ -584,9 +585,9 @@ class CAssociation(CClassifier):
         """
         if self.is_deleted:
             return
-        if is_cmetaclass(self.source):
+        if isinstance(self.source, CMetaclass):
             all_instances = self.source.all_classes
-        elif is_cstereotype(self.source):
+        elif isinstance(self.source, CStereotype):
             all_instances = self.source.all_extended_instances
         else:
             all_instances = self.source.all_objects

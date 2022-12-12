@@ -29,7 +29,7 @@ class RenderingContext(object):
         self.render_tagged_values = True
 
     def get_node_id(self, element):
-        if is_cobject(element) and element.class_object_class is not None:
+        if isinstance(element, CObject) and element.class_object_class is not None:
             # use the class object's class rather than the class object to identify them uniquely
             element = element.class_object_class
         if element in self.node_ids:

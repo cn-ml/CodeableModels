@@ -1,6 +1,9 @@
+from codeable_models.cassociation import CAssociation
+from codeable_models.cclass import CClass
+from codeable_models.clink import CLink
 from codeable_models.cexception import CException
-from codeable_models.internal.commons import is_cclass, is_clink, check_is_cstereotype, is_cstereotype, \
-    check_named_element_is_not_deleted, is_cassociation
+from codeable_models.cstereotype import CStereotype
+from codeable_models.internal.commons import check_is_cstereotype, check_named_element_is_not_deleted
 
 
 class CStereotypesHolder:
@@ -37,7 +40,7 @@ class CStereotypesHolder:
             elements = []
         self._remove_from_stereotype()
         self.stereotypes_ = []
-        if is_cstereotype(elements):
+        if isinstance(elements, CStereotype):
             elements = [elements]
         elif not isinstance(elements, list):
             raise CException(f"a list or a stereotype is required as input")
@@ -85,11 +88,11 @@ class CStereotypeInstancesHolder(CStereotypesHolder):
         stereotype.extended_instances_.append(self.element)
 
     def _get_element_name_string(self):
-        if is_cclass(self.element):
+        if isinstance(self.element, CClass):
             return f"'{self.element.name!s}'"
-        elif is_clink(self.element):
+        elif isinstance(self.element, CLink):
             return f"link from '{self.element.source!s}' to '{self.element.target!s}'"
-        elif is_cassociation(self.element):
+        elif isinstance(self.element, CAssociation):
             return f"association from '{self.element.source!s}' to '{self.element.target!s}'"
         raise CException(f"unexpected element type: {self.element!r}")
 

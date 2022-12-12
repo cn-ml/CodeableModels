@@ -1,6 +1,7 @@
 from codeable_models import CBundlable
 from codeable_models.cexception import CException
-from codeable_models.internal.commons import is_cnamedelement, check_named_element_is_not_deleted
+from codeable_models.cnamedelement import CNamedElement
+from codeable_models.internal.commons import check_named_element_is_not_deleted
 
 
 class CBundle(CBundlable):
@@ -106,7 +107,7 @@ class CBundle(CBundlable):
         for e in self.elements_:
             e._bundle = None
         self.elements_ = []
-        if is_cnamedelement(elements):
+        if isinstance(elements, CNamedElement):
             elements = [elements]
         elif not isinstance(elements, list):
             raise CException(f"elements requires a list or a named element as input")
@@ -115,7 +116,7 @@ class CBundle(CBundlable):
                 check_named_element_is_not_deleted(e)
             else:
                 raise CException(f"'None' cannot be an element of bundle")
-            is_cnamedelement(e)
+            isinstance(e, CNamedElement)
             if e not in self.elements_:
                 # if it is already in the bundle, do not add it twice
                 self.elements_.append(e)

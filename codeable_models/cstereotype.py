@@ -1,8 +1,10 @@
 from codeable_models.cclass import CClass
+from codeable_models.clink import CLink
 from codeable_models.cassociation import CAssociation
 from codeable_models.cclassifier import CClassifier
 from codeable_models.cmetaclass import CMetaclass
-from codeable_models.internal.commons import *
+from codeable_models.cexception import CException
+from codeable_models.internal.commons import check_is_cassociation, check_is_cmetaclass, check_named_element_is_not_deleted
 from codeable_models.internal.var_values import delete_var_value, set_var_value, get_var_value, get_var_values, \
     set_var_values, VarValueKind
 
@@ -10,9 +12,9 @@ from codeable_models.internal.var_values import delete_var_value, set_var_value,
 def _determine_extended_type_of_list(elements):
     if len(elements) == 0:
         return None
-    if is_cmetaclass(elements[0]):
+    if isinstance(elements[0], CMetaclass):
         return CMetaclass
-    if is_cassociation(elements[0]):
+    if isinstance(elements[0], CAssociation):
         return CAssociation
     raise CException(f"unknown type of extend element: '{elements[0]!s}'")
 
@@ -112,10 +114,10 @@ class CStereotype(CClassifier):
         for e in self.extended_:
             e.stereotypes_holder.stereotypes_.remove(self)
         self.extended_ = []
-        if is_cmetaclass(elements):
+        if isinstance(elements, CMetaclass):
             extended_type = CMetaclass
             elements = [elements]
-        elif is_cassociation(elements):
+        elif isinstance(elements, CAssociation):
             extended_type = CAssociation
             elements = [elements]
         elif not isinstance(elements, list):
@@ -194,21 +196,21 @@ class CStereotype(CClassifier):
         return False
 
     def is_element_extended_by_stereotype_(self, element):
-        if is_cclass(element):
+        if isinstance(element, CClass):
             if self.is_metaclass_extended_by_this_stereotype_(element.metaclass):
                 return True
             for superclass in self.get_all_superclasses_():
                 if superclass.is_metaclass_extended_by_this_stereotype_(element.metaclass):
                     return True
             return False
-        elif is_clink(element):
+        elif isinstance(element, CLink):
             if element.association in self.extended:
                 return True
             for superclass in self.get_all_superclasses_():
                 if element.association in superclass.extended:
                     return True
             return False
-        elif is_cassociation(element):
+        elif isinstance(element, CAssociation):
             if element.derived_from in self.extended:
                 return True
             for superclass in self.get_all_superclasses_():
@@ -257,7 +259,7 @@ class CStereotype(CClassifier):
     def _get_default_value_class_path(self):
         result = []
         for extendedElement in self._get_all_extended_elements():
-            if not is_cmetaclass(extendedElement):
+            if not isinstance(extendedElement, CMetaclass):
                 raise CException(f"default values can only be used on a stereotype that extends metaclasses")
             for mcl in extendedElement.class_path:
                 if mcl not in result:

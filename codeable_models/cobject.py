@@ -104,7 +104,7 @@ class CObject(CBundlable):
 
     @classifier.setter
     def classifier(self, cl):
-        if is_clink(self):
+        if isinstance(self, CLink):
             raise CException(
                 f"Changes to the classifier (i.e., the association) of a link" +
                 " should not be performed with CObject methods")
@@ -149,21 +149,21 @@ class CObject(CBundlable):
             return False
         if classifier is None:
             raise CException(f"'None' is not a valid argument")
-        if is_clink(self):
+        if isinstance(self, CLink):
             # noinspection PyUnresolvedReferences
             if self.is_class_link():
-                if not (is_cmetaclass(classifier) or is_cassociation(classifier)):
+                if not (isinstance(classifier, CMetaclass) or isinstance(classifier, CAssociation)):
                     raise CException(f"'{classifier!s}' is not an association or a metaclass")
             else:
-                if not (is_cclass(classifier) or is_cassociation(classifier)):
+                if not (isinstance(classifier, CClass) or isinstance(classifier, CAssociation)):
                     raise CException(f"'{classifier!s}' is not an association or a class")
         else:
             if isinstance(self.classifier, CMetaclass):
                 # this is a class object
-                if not is_cmetaclass(classifier):
+                if not isinstance(classifier, CMetaclass):
                     raise CException(f"'{classifier!s}' is not a metaclass")
             else:
-                if not is_cclass(classifier):
+                if not isinstance(classifier, CClass):
                     raise CException(f"'{classifier!s}' is not a class")
 
         if self.classifier == classifier:
@@ -174,7 +174,7 @@ class CObject(CBundlable):
 
     def _get_kind_str(self):
         kind_str = "object"
-        if is_clink(self):
+        if isinstance(self, CLink):
             kind_str = "link"
         elif self.class_object_class_ is not None:
             kind_str = "class"

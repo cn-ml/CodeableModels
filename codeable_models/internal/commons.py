@@ -1,5 +1,4 @@
-from codeable_models.cexception import CException
-
+from codeable_models import *
 
 def set_keyword_args(obj, allowed_values, **kwargs):
     for key in kwargs:
@@ -9,7 +8,7 @@ def set_keyword_args(obj, allowed_values, **kwargs):
             raise CException(f"unknown keyword argument '{key!s}', should be one of: {allowed_values!s}")
 
 
-def get_attribute_type(attr):
+def get_attribute_type(attr: object):
     if isinstance(attr, str):
         return str
     elif isinstance(attr, bool):
@@ -20,141 +19,57 @@ def get_attribute_type(attr):
         return float
     elif isinstance(attr, list):
         return list
-    elif is_cobject(attr):
+    elif isinstance(attr, CObject):
         check_named_element_is_not_deleted(attr)
         return attr.classifier
-    elif is_cclass(attr):
+    elif isinstance(attr, CClass):
         check_named_element_is_not_deleted(attr)
         return attr.metaclass
     return None
 
 
 def is_known_attribute_type(test_type):
-    if is_cnamedelement(test_type):
+    if isinstance(test_type, CNamedElement):
         return False
     return test_type == str or test_type == bool or test_type == int or test_type == float or test_type == list
 
 
-def is_cenum(elt):
-    from codeable_models.cenum import CEnum
-    if isinstance(elt, CEnum):
-        return True
-    return False
-
-
-def is_cclassifier(elt):
-    from codeable_models.cclassifier import CClassifier
-    if isinstance(elt, CClassifier):
-        return True
-    return False
-
-
-def is_cnamedelement(elt):
-    from codeable_models.cnamedelement import CNamedElement
-    if isinstance(elt, CNamedElement):
-        return True
-    return False
-
-
-def is_cattribute(elt):
-    from codeable_models.cattribute import CAttribute
-    if isinstance(elt, CAttribute):
-        return True
-    return False
-
-
-def is_cobject(elt):
-    from codeable_models.cobject import CObject
-    if isinstance(elt, CObject):
-        return True
-    return False
-
-
-def is_cclass(elt):
-    from codeable_models.cclass import CClass
-    if isinstance(elt, CClass):
-        return True
-    return False
-
-
-def is_cmetaclass(elt):
-    from codeable_models.cmetaclass import CMetaclass
-    if isinstance(elt, CMetaclass):
-        return True
-    return False
-
-
-def is_cstereotype(elt):
-    from codeable_models.cstereotype import CStereotype
-    if isinstance(elt, CStereotype):
-        return True
-    return False
-
-
-def is_cbundle(elt):
-    from codeable_models.cbundle import CBundle
-    if isinstance(elt, CBundle):
-        return True
-    return False
-
-
-def is_cbundlable(elt):
-    from codeable_models.cbundlable import CBundlable
-    if isinstance(elt, CBundlable):
-        return True
-    return False
-
-
-def is_cassociation(elt):
-    from codeable_models.cassociation import CAssociation
-    if isinstance(elt, CAssociation):
-        return True
-    return False
-
-
-def is_clink(elt):
-    from codeable_models.clink import CLink
-    if isinstance(elt, CLink):
-        return True
-    return False
-
-
-def check_is_cmetaclass(elt):
-    if not is_cmetaclass(elt):
+def check_is_cmetaclass(elt: object):
+    if not isinstance(elt, CMetaclass):
         raise CException(f"'{elt!s}' is not a metaclass")
 
 
-def check_is_cclassifier(elt):
-    if not is_cclassifier(elt):
+def check_is_cclassifier(elt: object):
+    if not isinstance(elt, CClassifier):
         raise CException(f"'{elt!s}' is not a classifier")
 
 
-def check_is_cclass(elt):
-    if not is_cclass(elt):
+def check_is_cclass(elt: object):
+    if not isinstance(elt, CClass):
         raise CException(f"'{elt!s}' is not a class")
 
 
-def check_is_cstereotype(elt):
-    if not is_cstereotype(elt):
+def check_is_cstereotype(elt: object):
+    if not isinstance(elt, CStereotype):
         raise CException(f"'{elt!s}' is not a stereotype")
 
 
-def check_is_cobject(elt):
-    if not is_cobject(elt):
+def check_is_cobject(elt: object):
+    if not isinstance(elt, CObject):
         raise CException(f"'{elt!s}' is not an object")
 
 
-def check_is_cbundle(elt):
-    if not is_cbundle(elt):
+def check_is_cbundle(elt: object):
+    if not isinstance(elt, CBundle):
         raise CException(f"'{elt!s}' is not a bundle")
 
 
-def check_is_cassociation(elt):
-    if not is_cassociation(elt):
+def check_is_cassociation(elt: object):
+    if not isinstance(elt, CAssociation):
         raise CException(f"'{elt!s}' is not a association")
 
 
-def check_named_element_is_not_deleted(named_element):
+def check_named_element_is_not_deleted(named_element: CNamedElement):
     if named_element.is_deleted:
         raise CException(f"cannot access named element that has been deleted")
 
@@ -163,7 +78,7 @@ def check_named_element_is_not_deleted(named_element):
 def get_common_classifier(objects):
     common_classifier = None
     for o in objects:
-        if o is None or not is_cobject(o):
+        if o is None or not isinstance(o, CObject):
             raise CException(f"not an object: '{o!s}'")
         if common_classifier is None:
             common_classifier = o.classifier
@@ -182,7 +97,7 @@ def get_common_classifier(objects):
                         common_classifier_found = True
                         break
             if not common_classifier_found:
-                if is_clink(o):
+                if isinstance(o, CLink):
                     raise CException(f"the link's association is missing a compatible classifier")
                 else:
                     raise CException(f"object '{o!s}' has an incompatible classifier")
@@ -230,9 +145,9 @@ def update_common_metaclasses(common_metaclasses, new_metaclasses):
 def get_common_metaclasses(classes_or_links):
     common_metaclasses = None
     for classifier in classes_or_links:
-        if is_clink(classifier):
+        if isinstance(classifier, CLink):
             link_classifiers = [link_cl for link_cl in classifier.association.all_superclasses if
-                                is_cmetaclass(link_cl)]
+                                isinstance(link_cl, CMetaclass)]
             if not link_classifiers:
                 raise CException(f"the metaclass link's association is missing a compatible classifier")
             if common_metaclasses is None:
@@ -241,7 +156,7 @@ def get_common_metaclasses(classes_or_links):
                 common_metaclasses = update_common_metaclasses(common_metaclasses, link_classifiers)
                 if len(common_metaclasses) == 0:
                     break
-        elif classifier is None or not is_cclass(classifier):
+        elif classifier is None or not isinstance(classifier, CClass):
             raise CException(f"not a class or link: '{classifier!s}'")
         else:
             if common_metaclasses is None:
@@ -264,8 +179,8 @@ def get_links(linked_elements):
     result = []
     for linked_ in linked_elements:
         linked = linked_
-        if not is_cobject(linked) and not is_clink(linked):
-            if is_cclass(linked):
+        if not isinstance(linked, CObject) and not isinstance(linked, CLink):
+            if isinstance(linked, CClass):
                 linked_ = linked.class_object
             else:
                 raise CException(f"'{linked!s}' is not an object, class, or link")

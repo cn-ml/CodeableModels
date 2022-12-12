@@ -102,7 +102,7 @@ class CLink(CObject):
             CObject: The opposite object.
 
         """
-        if is_cclass(cobject):
+        if isinstance(cobject, CClass):
             cobject = cobject.class_object
         if cobject == self.source_:
             return self.target_
@@ -118,7 +118,7 @@ class CLink(CObject):
             bool: Result of the check.
 
         """
-        if is_cclass(self.source) or (self.source.class_object_class is not None):
+        if isinstance(self.source, CClass) or (self.source.class_object_class is not None):
             return True
         return False
 
@@ -261,30 +261,30 @@ def _get_target_objects_from_definition(source_obj, targets):
     new_targets = []
     for t in targets:
         is_source_a_class = source_obj.class_object_class is not None
-        if is_cclass(t):
-            if is_clink(source_obj):
-                if not is_cmetaclass(source_obj.association.target):
+        if isinstance(t, CClass):
+            if isinstance(source_obj, CLink):
+                if not isinstance(source_obj.association.target, CMetaclass):
                     raise CException(f"link target '{t!s}' is a class, but source is a not class link")
             elif not is_source_a_class:
                 raise CException(f"link target '{t!s}' is a class, but source is an object")
             new_targets.append(t.class_object_)
-        elif is_clink(t):
-            if is_cmetaclass(t.association.source):
-                if is_clink(source_obj):
-                    if not is_cmetaclass(source_obj.association.target):
+        elif isinstance(t, CLink):
+            if isinstance(t.association.source, CMetaclass):
+                if isinstance(source_obj, CLink):
+                    if not isinstance(source_obj.association.target, CMetaclass):
                         raise CException(f"link target is an class link, but source is an object link")
                 elif not is_source_a_class:
                     raise CException(f"link target is a class link, but source is an object")
             else:
-                if is_clink(source_obj):
-                    if not is_cclass(source_obj.association.target):
+                if isinstance(source_obj, CLink):
+                    if not isinstance(source_obj.association.target, CClass):
                         raise CException(f"link target is an object link, but source is an class link")
                 elif is_source_a_class:
                     raise CException(f"link target is an object link, but source is a class")
             new_targets.append(t)
-        elif is_cobject(t):
-            if is_clink(source_obj):
-                if not is_cclass(source_obj.association.target):
+        elif isinstance(t, CObject):
+            if isinstance(source_obj, CLink):
+                if not isinstance(source_obj.association.target, CClass):
                     raise CException(f"link target '{t!s}' is an object, but source is not an object link")
             else:
                 if is_source_a_class and t.class_object_class is None:
@@ -307,9 +307,9 @@ def _check_link_definition_and_replace_classes(link_definitions):
         source_obj = source
         if source is None or source == []:
             raise CException("link should not contain an empty source")
-        if is_cclass(source):
+        if isinstance(source, CClass):
             source_obj = source.class_object_
-        elif not is_cobject(source):
+        elif not isinstance(source, CObject):
             raise CException(f"link source '{source!s}' is not an object, class, or link")
         targets = _get_target_objects_from_definition(source_obj, link_definitions[source])
         new_definitions[source_obj] = targets
@@ -320,7 +320,7 @@ def _check_link_definition_and_replace_classes(link_definitions):
 def _determine_matching_association_and_set_context_info(context, source, targets):
     if source.class_object_class is not None:
         target_classifier_candidates = get_common_metaclasses(
-            [co.class_object_class if not is_clink(co) else co for co in targets])
+            [co.class_object_class if not isinstance(co, CLink) else co for co in targets])
         context.sourceClassifier = source.class_object_class.metaclass
     else:
         target_classifier_candidates = [get_common_classifier(targets)]
@@ -372,11 +372,11 @@ def _determine_matching_association_and_set_context_info(context, source, target
 def link_objects_(context, source, targets):
     new_links = []
     source_obj = source
-    if is_cclass(source):
+    if isinstance(source, CClass):
         source_obj = source.class_object_
     for t in targets:
         target = t
-        if is_cclass(t):
+        if isinstance(t, CClass):
             target = t.class_object_
 
         source_for_link = source_obj

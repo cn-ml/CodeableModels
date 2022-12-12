@@ -1,7 +1,13 @@
+from codeable_models.cassociation import CAssociation
+from codeable_models.cobject import CObject
+from codeable_models.clink import CLink
+from codeable_models.cbundle import CBundle
+from codeable_models.cclass import CClass
 from codeable_models.cexception import CException
+from codeable_models.cmetaclass import CMetaclass
 from codeable_models.cnamedelement import CNamedElement
-from codeable_models.internal.commons import set_keyword_args, check_named_element_is_not_deleted, is_cbundle, \
-    is_cmetaclass, is_cstereotype, is_cbundlable, is_cassociation, is_cclass, is_cobject, is_clink
+from codeable_models.cstereotype import CStereotype
+from codeable_models.internal.commons import set_keyword_args, check_named_element_is_not_deleted
 
 
 class CBundlable(CNamedElement):
@@ -47,12 +53,12 @@ class CBundlable(CNamedElement):
         for b in self.bundles_:
             b.remove(self)
         self.bundles_ = []
-        if is_cbundle(bundles):
+        if isinstance(bundles, CBundle):
             bundles = [bundles]
         elif not isinstance(bundles, list):
             raise CException(f"bundles requires a list of bundles or a bundle as input")
         for b in bundles:
-            if not is_cbundle(b):
+            if not isinstance(b, CBundle):
                 raise CException(f"bundles requires a list of bundles or a bundle as input")
             check_named_element_is_not_deleted(b)
             if b in self.bundles_:
@@ -126,11 +132,11 @@ class CBundlable(CNamedElement):
 
         allowed_keyword_args = ["add_bundles", "process_bundles", "stop_elements_inclusive",
                                 "stop_elements_exclusive"]
-        if is_cmetaclass(self) or is_cbundle(self) or is_cstereotype(self):
+        if isinstance(self, CMetaclass) or isinstance(self, CBundle) or isinstance(self, CStereotype):
             allowed_keyword_args = ["add_stereotypes", "process_stereotypes"] + allowed_keyword_args
-        if is_cmetaclass(self) or is_cclass(self) or is_cassociation(self):
+        if isinstance(self, CMetaclass) or isinstance(self, CClass) or isinstance(self, CAssociation):
             allowed_keyword_args = ["add_associations"] + allowed_keyword_args
-        if is_cobject(self) or is_clink(self):
+        if isinstance(self, CObject) or isinstance(self, CLink):
             allowed_keyword_args = ["add_links"] + allowed_keyword_args
 
         set_keyword_args(context, allowed_keyword_args, **kwargs)
@@ -140,13 +146,13 @@ class CBundlable(CNamedElement):
         context.elements.append(self)
         self.compute_connected_(context)
         if not context.add_bundles:
-            context.elements = [elt for elt in context.elements if not is_cbundle(elt)]
+            context.elements = [elt for elt in context.elements if not isinstance(elt, CBundle)]
         if not context.add_stereotypes:
-            context.elements = [elt for elt in context.elements if not is_cstereotype(elt)]
+            context.elements = [elt for elt in context.elements if not isinstance(elt, CStereotype)]
         if not context.add_associations:
-            context.elements = [elt for elt in context.elements if not is_cassociation(elt)]
+            context.elements = [elt for elt in context.elements if not isinstance(elt, CAssociation)]
         if not context.add_links:
-            context.elements = [elt for elt in context.elements if not is_clink(elt)]
+            context.elements = [elt for elt in context.elements if not isinstance(elt, CLink)]
         return context.elements
 
     @staticmethod
@@ -184,12 +190,12 @@ class ConnectedElementsContext(object):
 
     @stop_elements_inclusive.setter
     def stop_elements_inclusive(self, stop_elements_inclusive):
-        if is_cbundlable(stop_elements_inclusive):
+        if isinstance(stop_elements_inclusive, CBundlable):
             stop_elements_inclusive = [stop_elements_inclusive]
         if not isinstance(stop_elements_inclusive, list):
             raise CException(f"expected one element or a list of stop elements, but got: '{stop_elements_inclusive!s}'")
         for e in stop_elements_inclusive:
-            if not is_cbundlable(e):
+            if not isinstance(e, CBundlable):
                 raise CException(f"expected one element or a list of stop elements, but got: " +
                                  f"'{stop_elements_inclusive!s}' with element of wrong type: '{e!s}'")
         self._stop_elements_inclusive = stop_elements_inclusive
@@ -201,12 +207,12 @@ class ConnectedElementsContext(object):
 
     @stop_elements_exclusive.setter
     def stop_elements_exclusive(self, stop_elements_exclusive):
-        if is_cbundlable(stop_elements_exclusive):
+        if isinstance(stop_elements_exclusive, CBundlable):
             stop_elements_exclusive = [stop_elements_exclusive]
         if not isinstance(stop_elements_exclusive, list):
             raise CException(f"expected a list of stop elements, but got: '{stop_elements_exclusive!s}'")
         for e in stop_elements_exclusive:
-            if not is_cbundlable(e):
+            if not isinstance(e, CBundlable):
                 raise CException(f"expected a list of stop elements, but got: '{stop_elements_exclusive!s}'" +
                                  f" with element of wrong type: '{e!s}'")
         self._stop_elements_exclusive = stop_elements_exclusive

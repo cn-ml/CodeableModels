@@ -18,7 +18,7 @@ def _get_var_unknown_exception(value_kind, entity, var_name):
     if value_kind == VarValueKind.DEFAULT_VALUE:
         return CException(
             f"{value_kind_str!s} '{var_name!s}' unknown for metaclasses extended by stereotype '{entity!s}'")
-    if is_clink(entity):
+    if isinstance(entity, CLink):
         return CException(f"{value_kind_str!s} '{var_name!s}' unknown")
     return CException(f"{value_kind_str!s} '{var_name!s}' unknown for '{entity!s}'")
 

@@ -24,11 +24,11 @@ class ClassModelRenderer(ModelRenderer):
         stereotype_string = ""
         tagged_value_string = ""
 
-        if is_cstereotype(cl):
+        if isinstance(cl, CStereotype):
             stereotype_string = self.render_stereotypes_string("stereotype")
-        if is_cmetaclass(cl):
+        if isinstance(cl, CMetaclass):
             stereotype_string = self.render_stereotypes_string("metaclass")
-        if is_cclass(cl):
+        if isinstance(cl, CClass):
             stereotype_string = self.render_stereotypes(cl.stereotype_instances)
             if context.render_tagged_values:
                 tagged_value_string = self.render_tagged_values(cl, cl.stereotype_instances)
@@ -47,7 +47,7 @@ class ClassModelRenderer(ModelRenderer):
     def render_attributes(self, context, cl):
         if not context.render_attributes:
             return ""
-        if is_cenum(cl):
+        if isinstance(cl, CEnum):
             if len(cl.values) == 0:
                 return ""
             value_string = "{\n"
@@ -68,7 +68,7 @@ class ClassModelRenderer(ModelRenderer):
     def render_attribute(attribute):
         type_ = attribute.type
         t = None
-        if is_cenum(type_) or is_cclassifier(type_):
+        if isinstance(type_, CEnum) or isinstance(type_, CClassifier):
             t = type_.name
             if t is None:
                 t = " "
@@ -89,7 +89,7 @@ class ClassModelRenderer(ModelRenderer):
     def render_associations(self, context, cl, class_list):
         if not context.render_associations:
             return
-        if is_cenum(cl):
+        if isinstance(cl, CEnum):
             return
         for association in cl.associations:
             if context.included_associations is not None:
@@ -161,7 +161,7 @@ class ClassModelRenderer(ModelRenderer):
         if not context.render_extended_relations:
             return
         for extended in stereotype.extended:
-            if is_cmetaclass(extended):
+            if isinstance(extended, CMetaclass):
                 if context.included_extended_classes:
                     if extended not in context.included_extended_classes:
                         continue
@@ -176,7 +176,7 @@ class ClassModelRenderer(ModelRenderer):
         if not context.render_inheritance:
             return
         for cl in class_list:
-            if is_cenum(cl):
+            if isinstance(cl, CEnum):
                 continue
             for sub_class in cl.subclasses:
                 if sub_class in class_list:
@@ -184,13 +184,13 @@ class ClassModelRenderer(ModelRenderer):
 
     def render_classes(self, context, class_list):
         for cl in class_list:
-            if not is_cclassifier(cl) and not is_cenum(cl):
+            if not isinstance(cl, CClassifier) and not isinstance(cl, CEnum):
                 raise CException(f"'{cl!s}' handed to class renderer is not a classifier or enum'")
             self.render_classifier_specification(context, cl)
         self.render_inheritance_relations(context, class_list)
         for cl in class_list:
             self.render_associations(context, cl, class_list)
-            if is_cstereotype(cl):
+            if isinstance(cl, CStereotype):
                 self.render_extended_relations(context, cl, class_list)
 
     def render_class_model(self, class_list, **kwargs):

@@ -114,9 +114,9 @@ class CClassifier(CBundlable):
     def _set_attribute(self, name, value):
         if name in self.attributes_.keys():
             raise CException(f"duplicate attribute name: '{name!s}'")
-        if is_cattribute(value):
+        if isinstance(value, CAttribute):
             attr = value
-        elif is_known_attribute_type(value) or isinstance(value, CEnum) or is_cclassifier(value):
+        elif is_known_attribute_type(value) or isinstance(value, CEnum) or isinstance(value, CClassifier):
             # if value is a CClass, we interpret it as the type for a CObject attribute, not the default 
             # value of a CMetaclass type attribute: if you need to set a metaclass type default value, use 
             # CAttribute's default instead
@@ -190,19 +190,19 @@ class CClassifier(CBundlable):
         for sc in self.superclasses_:
             sc.subclasses_.remove(self)
         self.superclasses_ = []
-        if is_cclassifier(elements):
+        if isinstance(elements, CClassifier):
             elements = [elements]
         for scl in elements:
             if scl is not None:
                 check_named_element_is_not_deleted(scl)
             if not isinstance(scl, self.__class__):
-                if is_cassociation(self):
+                if isinstance(self, CAssociation):
                     if self.is_metaclass_association_():
-                        if not is_cmetaclass(scl) or (is_cassociation(scl) and scl.is_metaclass_association_()):
+                        if not isinstance(scl, CMetaclass) or (isinstance(scl, CAssociation) and scl.is_metaclass_association_()):
                             raise CException(f"cannot add superclass '{scl!s}':" +
                                              " not a metaclass or metaclass association")
                     else:
-                        if not is_cclass(scl) or (is_cassociation(scl) and not scl.is_metaclass_association_()):
+                        if not isinstance(scl, CClass) or (isinstance(scl, CAssociation) and not scl.is_metaclass_association_()):
                             raise CException(f"cannot add superclass '{scl!s}':" +
                                              " not a class or class association")
                 else:
