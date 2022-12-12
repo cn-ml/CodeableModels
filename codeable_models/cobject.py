@@ -219,7 +219,7 @@ class CObject(CBundlable):
         return delete_var_value(self, self.classifier.class_path, self.attribute_values, attribute_name,
                                 VarValueKind.ATTRIBUTE_VALUE, classifier)
 
-    def set_value(self, attribute_name: str, value: CObject, classifier: Optional[CClass]=None):
+    def set_value(self, attribute_name: str, value: CObject, classifier: Optional[CClassifier]=None):
         """Set the value of an attribute with the given ``attribute_name`` to ``value``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its classifier.

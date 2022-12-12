@@ -1,20 +1,23 @@
 from typing import Any, Dict, Iterable, List, Optional, Unpack
+from codeable_models.cassociation import CAssociation, CAssociationKwargs
+from codeable_models.clink import DeleteLinksKwargs, LinksKwargs, TargetDefinitions
 from codeable_models.cclassifier import CClassifier, CClassifierKwargs
 from codeable_models.cexception import CException
 from codeable_models import CMetaclass
 from codeable_models.cobject import CObject
+from codeable_models.cattribute import CAttribute
 from codeable_models.cstereotype import CStereotype
-from codeable_models.internal.commons import check_is_cmetaclass, check_is_cobject, \
+from codeable_models.internal.commons import ListOrSingle, check_is_cmetaclass, check_is_cobject, \
     check_named_element_is_not_deleted
 from codeable_models.internal.stereotype_holders import CStereotypeInstancesHolder
 from codeable_models.internal.var_values import delete_var_value, set_var_value, get_var_value, get_var_values, \
     set_var_values, VarValueKind
 
 
-class CClassKwargs(CClassifierKwargs):
-    stereotype_instances: Any
-    values: Any
-    tagged_values: Any
+class CClassKwargs(CClassifierKwargs, total=False):
+    stereotype_instances: Optional[ListOrSingle[CStereotype]]
+    # values: Any
+    # tagged_values: Any
 
 class CClass(CClassifier):
     def __init__(self, metaclass: CMetaclass, name: Optional[str]=None, **kwargs: Unpack[CClassKwargs]):
@@ -181,10 +184,12 @@ class CClass(CClassifier):
         """
         return self.class_object_.instance_of(classifier)
 
-    def update_default_values_of_classifier_(self, attribute=None):
+    def update_default_values_of_classifier_(self, attribute: Optional[CAttribute]=None):
         for i in self.all_objects:
             attr_items = self.attributes_.items()
             if attribute is not None:
+                if attribute.name_ is None:
+                    raise Exception("Attribute has no name!")
                 attr_items = {attribute.name_: attribute}.items()
             for attrName, attr in attr_items:
                 if attr.default is not None:
@@ -197,7 +202,7 @@ class CClass(CClassifier):
                 if attrName not in attributes_to_keep:
                     i.remove_value_(attrName, self)
 
-    def get_value(self, attribute_name, classifier=None):
+    def get_value(self, attribute_name: str, classifier: Optional[CClassifier]=None):
         """Get the value of an attribute with the given ``attribute_name``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its classifier.
@@ -211,7 +216,7 @@ class CClass(CClassifier):
         """
         return self.class_object_.get_value(attribute_name, classifier)
 
-    def delete_value(self, attribute_name, classifier=None):
+    def delete_value(self, attribute_name: str, classifier: Optional[CClassifier]=None):
         """Delete the value of an attribute with the given ``attribute_name``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its classifier.
@@ -225,7 +230,7 @@ class CClass(CClassifier):
         """
         return self.class_object_.delete_value(attribute_name, classifier)
 
-    def set_value(self, attribute_name, value, classifier=None):
+    def set_value(self, attribute_name: str, value: CObject, classifier: Optional[CClassifier]=None):
         """Set the value of an attribute with the given ``attribute_name`` to ``value``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its classifier.
@@ -252,7 +257,7 @@ class CClass(CClassifier):
     def values(self, new_values):
         self.class_object_.values = new_values
 
-    def get_objects(self, name):
+    def get_objects(self, name: str):
         """
         Returns all objects with a given name with are instances of this classifier.
 
@@ -265,7 +270,7 @@ class CClass(CClassifier):
         """
         return list(o for o in self.objects if o.name == name)
 
-    def get_object(self, name):
+    def get_object(self, name: str):
         """
         Returns an object with the given name with is instance of this classifier, or if not present ``None``.
         If multiple objects are found, the first found object is returned.
@@ -278,11 +283,11 @@ class CClass(CClassifier):
 
         """
         objects = self.get_objects(name)
-        return None if len(objects) == 0 else objects[0]
+        return next(iter(objects), None)
 
     @property
     def stereotype_instances(self):
-        """list[CStereotype]|CStereotype: Getter to get and setter to set the stereotype instances of this class.
+        """ListOrSingle[CStereotype]: Getter to get and setter to set the stereotype instances of this class.
 
         The stereotype instances must be stereotypes extending the meta-class of the class.
 
@@ -292,7 +297,7 @@ class CClass(CClassifier):
         return self.stereotype_instances_holder.stereotypes
 
     @stereotype_instances.setter
-    def stereotype_instances(self, elements: Optional[List[CStereotype] | CStereotype]):
+    def stereotype_instances(self, elements: Optional[ListOrSingle[CStereotype]]):
         self.stereotype_instances_holder.stereotypes = elements
         self._init_stereotype_default_values()
 
@@ -385,7 +390,7 @@ class CClass(CClassifier):
             raise CException(f"can't set tagged values on deleted class")
         set_var_values(self, new_values, VarValueKind.TAGGED_VALUE)
 
-    def association(self, target, descriptor=None, **kwargs):
+    def association(self, target: "CClass" | CClassifier, descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
         """Method used to create associations on this class. See documentation of method ``association``
         on :py:class:`.CClassifier` for details.
 
@@ -413,7 +418,7 @@ class CClass(CClassifier):
         """list[CClass]: Getter for getting the linked classes defined for this class."""
         return self.class_object_.linked
 
-    def get_linked(self, **kwargs):
+    def get_linked(self, **kwargs: Unpack[LinksKwargs]):
         """Method to get the linked classes defined for this class filtered using criteria specified in kwargs.
 
         Args:
@@ -432,7 +437,7 @@ class CClass(CClassifier):
         """
         return self.class_object_.get_linked(**kwargs)
 
-    def get_links_for_association(self, association):
+    def get_links_for_association(self, association: Optional[CAssociation]):
         """
         Method to get all link objects which are defined based on the given association.
 
@@ -445,7 +450,7 @@ class CClass(CClassifier):
         """
         return self.class_object_.get_links_for_association(association)
 
-    def add_links(self, links, **kwargs):
+    def add_links(self, links: TargetDefinitions, **kwargs: Unpack[LinksKwargs]):
         """
         Add links on this class (which are based on associations defined on the class' meta-class).
         Uses the function :py:func:`.add_links`. That is, it is possible to use the following equivalently::
@@ -462,7 +467,7 @@ class CClass(CClassifier):
         """
         return self.class_object_.add_links(links, **kwargs)
 
-    def delete_links(self, links, **kwargs):
+    def delete_links(self, links: TargetDefinitions, **kwargs: Unpack[DeleteLinksKwargs]):
         """
         Delete links on this class (which are based on associations defined on the class' meta-class).
         Uses the function :py:func:`.delete_links`. That is, it is possible

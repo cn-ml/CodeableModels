@@ -1,13 +1,16 @@
-from typing import Any, Dict, List, Optional, TypedDict, Unpack
+from typing import Any, List, Optional, TypedDict, Unpack
 from codeable_models import CBundlable
-from codeable_models.cbundlable import ConnectedElementsContext
+from codeable_models.cbundlable import CBundlableKwargs, ConnectedElementsContext
 from codeable_models.cexception import CException
 from codeable_models.cnamedelement import CNamedElement
-from codeable_models.internal.commons import check_named_element_is_not_deleted
+from codeable_models.internal.commons import ListOrSingle, check_named_element_is_not_deleted
 
+
+class CBundleKwargs(CBundlableKwargs, total=False):
+    elements: Optional[ListOrSingle[CBundlable]]
 
 class CBundle(CBundlable):
-    def __init__(self, name: Optional[str]=None, **kwargs: dict[str, Any]):
+    def __init__(self, name: Optional[str]=None, **kwargs: Unpack[CBundleKwargs]):
         """
         ``CBundle`` is used to manage bundles, i.e., groups of modelling elements in Codeable Models.
 
@@ -36,7 +39,7 @@ class CBundle(CBundlable):
         self.elements_: List[CBundlable] = []
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: dict[str, Any]):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("elements")
@@ -98,7 +101,7 @@ class CBundle(CBundlable):
         return list(self.elements_)
 
     @elements.setter
-    def elements(self, elements: List[CBundlable] | CBundlable):
+    def elements(self, elements: Optional[ListOrSingle[CBundlable]]):
         if elements is None:
             elements = []
         for e in self.elements_:
@@ -180,7 +183,7 @@ class CBundle(CBundlable):
 
 
 class CPackage(CBundle):
-    def __init__(self, name: Optional[str]=None, **kwargs: Dict[str, Any]):
+    def __init__(self, name: Optional[str]=None, **kwargs: Any):
         """
         Simple class to designate bundles as packages.
 
@@ -189,8 +192,12 @@ class CPackage(CBundle):
         super().__init__(name, **kwargs)
 
 
+class CLayerKwargs(CBundleKwargs, total=False):
+    sub_layer: Optional["CLayer"]
+    super_layer: Optional["CLayer"]
+
 class CLayer(CBundle):
-    def __init__(self, name: Optional[str]=None, **kwargs: Dict[str, Any]):
+    def __init__(self, name: Optional[str]=None, **kwargs: Unpack[CLayerKwargs]):
         """
         Simple class to designate bundles as layers, and manage sub-/super-layer relations.
 
@@ -209,7 +216,7 @@ class CLayer(CBundle):
         self._super_layer: Optional["CLayer"] = None
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Dict[str, Any]):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("sub_layer")
@@ -223,7 +230,7 @@ class CLayer(CBundle):
         return self._sub_layer
 
     @sub_layer.setter
-    def sub_layer(self, layer: "CLayer"):
+    def sub_layer(self, layer: Optional["CLayer"]):
         if self._sub_layer is not None:
             self._sub_layer._super_layer = None
         self._sub_layer = layer
@@ -239,7 +246,7 @@ class CLayer(CBundle):
         return self._super_layer
 
     @super_layer.setter
-    def super_layer(self, layer: "CLayer"):
+    def super_layer(self, layer: Optional["CLayer"]):
         if self._super_layer is not None:
             self._super_layer._sub_layer = None
         self._super_layer = layer

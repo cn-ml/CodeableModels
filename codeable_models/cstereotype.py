@@ -1,12 +1,15 @@
-from typing import Iterable, List, Optional
-from codeable_models.cbundlable import CBundlable
+from typing import Any, Dict, Iterable, List, Optional, Unpack
+
+from pyparsing import Opt
+from codeable_models.cbundlable import CBundlable, ConnectedElementsContext
 from codeable_models.cclass import CClass
+from codeable_models.cenum import AttributeValueType
 from codeable_models.clink import CLink
 from codeable_models.cassociation import CAssociation
-from codeable_models.cclassifier import CClassifier
+from codeable_models.cclassifier import CClassifier, CClassifierKwargs
 from codeable_models.cmetaclass import CMetaclass
 from codeable_models.cexception import CException
-from codeable_models.internal.commons import check_is_cassociation, check_is_cmetaclass, check_named_element_is_not_deleted
+from codeable_models.internal.commons import ListOrSingle, check_is_cassociation, check_is_cmetaclass, check_named_element_is_not_deleted
 from codeable_models.internal.stereotype_holders import CElementType
 from codeable_models.internal.var_values import delete_var_value, set_var_value, get_var_value, get_var_values, \
     set_var_values, VarValueKind
@@ -22,8 +25,12 @@ def _determine_extended_type_of_list(elements):
     raise CException(f"unknown type of extend element: '{elements[0]!s}'")
 
 
+class CStereotypeKwargs(CClassifierKwargs, total=False):
+    extended: Optional[ListOrSingle[CMetaclass | CAssociation]]
+    default_values: Optional[Dict[str, Any]]
+
 class CStereotype(CClassifier):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name: Optional[str]=None, **kwargs: Unpack[CStereotypeKwargs]):
         """``CStereotype`` is used to define stereotypes and stereotype instances. Meta-classes and meta-class
         associations can be extended with stereotypes.
 
@@ -89,8 +96,8 @@ class CStereotype(CClassifier):
         the association, respectively.
         """
         self.extended_ = []
-        self.extended_instances_: List[CClass | CAssociation | CLink] = []
-        self.default_values_ = {}
+        self.extended_instances_: List[CClass | CLink] = []
+        self.default_values_: Dict[CClassifier, Dict[str, AttributeValueType]] = {}
         super().__init__(name, **kwargs)
 
     def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
@@ -111,7 +118,7 @@ class CStereotype(CClassifier):
         return list(self.extended_)
 
     @extended.setter
-    def extended(self, elements):
+    def extended(self, elements: Optional[ListOrSingle[CMetaclass | CAssociation]]):
         if elements is None:
             elements = []
         for e in self.extended_:
@@ -153,6 +160,8 @@ class CStereotype(CClassifier):
         extended by this stereotype, including those on subclasses."""
         all_instances = list(self.extended_instances_)
         for scl in self.all_subclasses:
+            if not isinstance(scl, CStereotype):
+                continue
             for cl in scl.extended_instances_:
                 all_instances.append(cl)
         return all_instances
@@ -241,26 +250,28 @@ class CStereotype(CClassifier):
             raise CException(f"stereotype '{self!s}' is not compatible with association target '{target!s}'")
         return super(CStereotype, self).association(target, descriptor, **kwargs)
 
-    def compute_connected_(self, context):
+    def compute_connected_(self, context: ConnectedElementsContext):
         super().compute_connected_(context)
         if not context.process_stereotypes:
             return
-        connected = []
+        connected: List[CBundlable] = []
         for e in self.extended:
             if e not in context.stop_elements_exclusive:
                 connected.append(e)
         self.append_connected_(context, connected)
 
     def _get_all_extended_elements(self):
-        result = []
+        result: List[CBundlable] = []
         for cl in self.class_path:
+            if not isinstance(cl, CStereotype):
+                continue
             for extendedElement in cl.extended:
                 if extendedElement not in result:
                     result.append(extendedElement)
         return result
 
     def _get_default_value_class_path(self):
-        result = []
+        result: List[CClassifier] = []
         for extendedElement in self._get_all_extended_elements():
             if not isinstance(extendedElement, CMetaclass):
                 raise CException(f"default values can only be used on a stereotype that extends metaclasses")
@@ -289,7 +300,7 @@ class CStereotype(CClassifier):
         return get_var_values(class_path, self.default_values_)
 
     @default_values.setter
-    def default_values(self, new_values):
+    def default_values(self, new_values: Optional[Dict[str, Any]]):
         if self.is_deleted:
             raise CException(f"can't set default values on deleted stereotype")
         class_path = self._get_default_value_class_path()
@@ -297,7 +308,7 @@ class CStereotype(CClassifier):
             raise CException(f"default values can only be used on a stereotype that extends metaclasses")
         set_var_values(self, new_values, VarValueKind.DEFAULT_VALUE)
 
-    def get_default_value(self, attribute_name, classifier=None):
+    def get_default_value(self, attribute_name: str, classifier: Optional[CClassifier]=None):
         """Get a default value defined on the stereotype or its superclasses
         with the given ``attribute_name``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
@@ -323,7 +334,7 @@ class CStereotype(CClassifier):
         return get_var_value(self, class_path, self.default_values_, attribute_name, VarValueKind.DEFAULT_VALUE,
                              classifier)
 
-    def delete_default_value(self, attribute_name, classifier=None):
+    def delete_default_value(self, attribute_name: str, classifier: Optional[CClassifier]=None):
         """Deletes a default value defined on the stereotype or its superclasses
         with the given ``attribute_name``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
@@ -344,7 +355,7 @@ class CStereotype(CClassifier):
         return delete_var_value(self, class_path, self.default_values_, attribute_name, VarValueKind.DEFAULT_VALUE,
                                 classifier)
 
-    def set_default_value(self, attribute_name, value, classifier=None):
+    def set_default_value(self, attribute_name: str, value: AttributeValueType, classifier: Optional[CClassifier]=None):
         """Set a default value defined on the stereotype or its superclasses
         with the given ``attribute_name`` to ``value``. Optionally the classifier
         to consider can be specified. This is needed, if one or more attributes of the same name are defined

@@ -1,15 +1,18 @@
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Unpack
 from codeable_models.cbundlable import ConnectedElementsContext
 import codeable_models.cclass as cclass
-from codeable_models.cclassifier import CClassifier
+from codeable_models.cclassifier import CClassifier, CClassifierKwargs
 from codeable_models.cexception import CException
 from codeable_models.cstereotype import CStereotype
 from codeable_models.internal.commons import check_is_cclass
 from codeable_models.internal.stereotype_holders import CStereotypesHolder
 
 
+class CMetaclassKwargs(CClassifierKwargs, total=False):
+    pass
+
 class CMetaclass(CClassifier):
-    def __init__(self, name=None, **kwargs):
+    def __init__(self, name: Optional[str]=None, **kwargs: Unpack[CMetaclassKwargs]):
         """``CMetaclass`` is used to define meta-classes. All classes (defined
         using :py:class:`.CClass`) in Codeable Models are instances of metaclasses.
 

@@ -6,7 +6,7 @@ from codeable_models.clink import CLink
 from codeable_models.cexception import CException
 from codeable_models.cmetaclass import CMetaclass
 from codeable_models.cstereotype import CStereotype
-from codeable_models.internal.commons import check_is_cstereotype, check_named_element_is_not_deleted
+from codeable_models.internal.commons import ListOrSingle, check_is_cstereotype, check_named_element_is_not_deleted
 
 CElementType = CClass | CLink | CAssociation
 
@@ -20,7 +20,7 @@ class CStereotypesHolder:
         return list(self.stereotypes_)
 
     @stereotypes.setter
-    def stereotypes(self, elements: Optional[List[CStereotype] | CStereotype]):
+    def stereotypes(self, elements: Optional[ListOrSingle[CStereotype]]):
         self._set_stereotypes(elements)
 
     # methods to be overridden in subclass
@@ -39,7 +39,7 @@ class CStereotypesHolder:
         pass
 
     # template method
-    def _set_stereotypes(self, elements: Optional[List[CStereotype] | CStereotype]):
+    def _set_stereotypes(self, elements: Optional[ListOrSingle[CStereotype]]):
         if elements is None:
             elements = []
         self._remove_from_stereotype()

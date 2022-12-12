@@ -6,7 +6,7 @@ from codeable_models.cexception import CException
 from codeable_models.cclassifier import CClassifier, CClassifierKwargs
 from codeable_models.cmetaclass import CMetaclass
 from codeable_models.cstereotype import CStereotype
-from codeable_models.internal.commons import check_is_cmetaclass, check_is_cclass
+from codeable_models.internal.commons import ListOrSingle, check_is_cmetaclass, check_is_cclass
 from codeable_models.internal.stereotype_holders import CStereotypesHolder, CStereotypeInstancesHolder
 from codeable_models.internal.var_values import get_var_value, VarValueKind, delete_var_value, set_var_value, \
     get_var_values, set_var_values
@@ -33,7 +33,7 @@ class CAssociationKwargs(CClassifierKwargs, total=False):
 class CAssociation(CClassifier):
     STAR_MULTIPLICITY = -1
 
-    def __init__(self, source: CClassifier, target: CClassifier, descriptor: Optional[Any]=None, **kwargs: Unpack[CAssociationKwargs]):
+    def __init__(self, source: CClassifier, target: CClassifier, descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
         """
         ``CAssociation`` is used for representing associations. Usually associations are created using the
         ``association`` method of :py:class:`.CClassifier` which calls the constructor of ``CAssociation``
@@ -315,14 +315,14 @@ class CAssociation(CClassifier):
         return self.stereotypes_holder.stereotypes
 
     @stereotypes.setter
-    def stereotypes(self, elements: Optional[List[CStereotype] | CStereotype]):
+    def stereotypes(self, elements: Optional[ListOrSingle[CStereotype]]):
         if not self.is_metaclass_association_():
             raise CException("stereotypes on associations can only be defined for metaclass associations")
         self.stereotypes_holder.stereotypes = elements
 
     @property
     def stereotype_instances(self):
-        """list[CStereotype]|CStereotype: Getter to get and setter to set the stereotype instances of this association.
+        """ListOrSingle[CStereotype]: Getter to get and setter to set the stereotype instances of this association.
 
         The stereotype instances must be stereotypes extending an association that this association is derived from.
 

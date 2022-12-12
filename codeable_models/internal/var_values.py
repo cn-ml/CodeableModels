@@ -28,7 +28,7 @@ def _get_var_unknown_exception(value_kind: VarValueKind, entity: object, var_nam
     return CException(f"{value_kind_str!s} '{var_name!s}' unknown for '{entity!s}'")
 
 
-def _get_and_check_var_classifier(_self: CBundlable, class_path: Sequence[CClassifier], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None) -> CAttribute:
+def _get_and_check_var_classifier(_self: CNamedElement, class_path: Sequence[CClassifier], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None) -> CAttribute:
     if classifier is None:
         # search on a class path
         for cl in class_path:
@@ -44,7 +44,7 @@ def _get_and_check_var_classifier(_self: CBundlable, class_path: Sequence[CClass
         return attribute
 
 
-def delete_var_value(_self: CBundlable, class_path: Sequence[CClassifier], values_dict: Dict[Any, Any], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
+def delete_var_value(_self: CNamedElement, class_path: Sequence[CClassifier], values_dict: Dict[Any, Any], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
     if _self.is_deleted:
         raise CException(f"can't delete '{var_name!s}' on deleted element")
     attribute = _get_and_check_var_classifier(_self, class_path, var_name, value_kind, classifier)
@@ -60,7 +60,7 @@ def delete_var_value(_self: CBundlable, class_path: Sequence[CClassifier], value
         return None
 
 
-def set_var_value(_self: CBundlable, class_path: Sequence[CClassifier], values_dict: Dict[CClassifier, Dict[str, T]], var_name: str, value: T, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
+def set_var_value(_self: CNamedElement, class_path: Sequence[CClassifier], values_dict: Dict[CClassifier, Dict[str, T]], var_name: str, value: T, value_kind: VarValueKind, classifier: Optional[CClassifier]=None):
     if _self.is_deleted:
         raise CException(f"can't set '{var_name!s}' on deleted element")
     attribute = _get_and_check_var_classifier(_self, class_path, var_name, value_kind, classifier)
@@ -71,7 +71,7 @@ def set_var_value(_self: CBundlable, class_path: Sequence[CClassifier], values_d
         values_dict[attribute.classifier] = {var_name: value}
 
 
-def get_var_value(_self: CObject, class_path: Sequence[CClassifier], values_dict: Dict[CClassifier, Dict[str, T]], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None) -> Optional[T]:
+def get_var_value(_self: CNamedElement, class_path: Sequence[CClassifier], values_dict: Dict[CClassifier, Dict[str, T]], var_name: str, value_kind: VarValueKind, classifier: Optional[CClassifier]=None) -> Optional[T]:
     if _self.is_deleted:
         raise CException(f"can't get '{var_name!s}' on deleted element")
     attribute = _get_and_check_var_classifier(_self, class_path, var_name, value_kind, classifier)
@@ -79,7 +79,7 @@ def get_var_value(_self: CObject, class_path: Sequence[CClassifier], values_dict
         raise Exception("Attribute has no classifier!")
     return values_dict.get(attribute.classifier, {}).get(var_name, None)
 
-def get_var_values(class_path: Sequence[CClassifier], values_dict: Dict[Any, Any]):
+def get_var_values(class_path: Sequence[CClassifier], values_dict: Dict[CClassifier, Dict[str, T]]):
     result: Dict[Any, Any] = {}
     for cl in class_path:
         if cl in values_dict:
@@ -89,7 +89,7 @@ def get_var_values(class_path: Sequence[CClassifier], values_dict: Dict[Any, Any
     return result
 
 
-def set_var_values(_self: CElementType | CStereotype | CObject, new_values: Optional[Dict[Any, Any]], values_kind: VarValueKind):
+def set_var_values(_self: CNamedElement, new_values: Optional[Dict[str, Any]], values_kind: VarValueKind):
     if new_values is None:
         new_values = {}
     if not isinstance(new_values, dict):
@@ -102,12 +102,12 @@ def set_var_values(_self: CElementType | CStereotype | CObject, new_values: Opti
         else:
             raise CException("unknown variable kind")
         raise CException(f"malformed {value_kind_str!s} description: '{new_values!s}'")
-    for valueName in new_values:
+    for valueName, value in new_values.items():
         if values_kind == VarValueKind.ATTRIBUTE_VALUE:
-            _self.set_value(valueName, new_values[valueName])
+            _self.set_value(valueName, value)
         elif values_kind == VarValueKind.TAGGED_VALUE:
-            _self.set_tagged_value(valueName, new_values[valueName])
+            _self.set_tagged_value(valueName, value)
         elif values_kind == VarValueKind.DEFAULT_VALUE:
-            _self.set_default_value(valueName, new_values[valueName])
+            _self.set_default_value(valueName, value)
         else:
             raise CException("unknown variable kind")

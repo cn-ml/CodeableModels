@@ -173,7 +173,7 @@ class CLink(CObject):
 
     @property
     def stereotype_instances(self):
-        """list[CStereotype]|CStereotype: Getter to get and setter to set the stereotype instances of this link.
+        """ListOrSingle[CStereotype]: Getter to get and setter to set the stereotype instances of this link.
 
         The stereotype instances must be stereotypes extending the association of the link.
 
@@ -183,7 +183,7 @@ class CLink(CObject):
         return self.stereotype_instances_holder.stereotypes
 
     @stereotype_instances.setter
-    def stereotype_instances(self, elements: Optional[List[CStereotype] | CStereotype]):
+    def stereotype_instances(self, elements: Optional[ListOrSingle[CStereotype]]):
         self.stereotype_instances_holder.stereotypes = elements
 
     def get_tagged_value(self, name: str, stereotype: Optional[CClassifier]=None):
@@ -255,12 +255,17 @@ class CLink(CObject):
         set_var_values(self, new_values, VarValueKind.TAGGED_VALUE)
 
 
-def _get_target_objects_from_definition(source_obj: CObject, targets: Optional[CObject | List[CObject]]):
+CheckedTargetDefinitions = List[CNamedElement]
+TargetDefinitions = Optional[ListOrSingle[CNamedElement]] | CheckedTargetDefinitions
+CheckedLinkDefinitions = Dict[CNamedElement, CheckedTargetDefinitions]
+LinkDefinitions = Dict[CNamedElement, Optional[ListOrSingle[CNamedElement]]] | CheckedLinkDefinitions
+
+def _get_target_objects_from_definition(source_obj: CNamedElement, targets: TargetDefinitions) -> CheckedTargetDefinitions:
     if targets is None:
         targets = []
     elif not isinstance(targets, list):
         targets = [targets]
-    new_targets: List[CObject] = []
+    new_targets: List[CNamedElement] = []
     for t in targets:
         is_source_a_class = source_obj.class_object_class is not None
         if isinstance(t, CClass):
@@ -297,11 +302,6 @@ def _get_target_objects_from_definition(source_obj: CObject, targets: Optional[C
         else:
             raise CException(f"link target '{t!s}' is not an object, class, or link")
     return new_targets
-
-CheckedTargetDefinitions = List[CObject]
-TargetDefinitions = Optional[List[CObject] | CObject] | CheckedTargetDefinitions
-CheckedLinkDefinitions = Dict[CObject, CheckedTargetDefinitions]
-LinkDefinitions = Dict[CObject, Optional[List[CObject] | CObject]] | CheckedLinkDefinitions
 
 def _check_link_definition_and_replace_classes(link_definitions: LinkDefinitions) -> CheckedLinkDefinitions:
     if not isinstance(link_definitions, dict):

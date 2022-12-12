@@ -8,10 +8,10 @@ from codeable_models.cexception import CException
 from codeable_models.cmetaclass import CMetaclass
 from codeable_models.cnamedelement import CNamedElement, CNamedElementKwargs
 from codeable_models.cstereotype import CStereotype
-from codeable_models.internal.commons import set_keyword_args, check_named_element_is_not_deleted
+from codeable_models.internal.commons import ListOrSingle, set_keyword_args, check_named_element_is_not_deleted
 
 class CBundlableKwargs(CNamedElementKwargs, total=False):
-    bundles: List[CBundle] | CBundle
+    bundles: ListOrSingle[CBundle]
 
 class CBundlable(CNamedElement):
     def __init__(self, name: Optional[str], **kwargs: Unpack[CBundlableKwargs]):
@@ -42,7 +42,7 @@ class CBundlable(CNamedElement):
 
     @property
     def bundles(self):
-        """list[CBundle]|CBundle: Property that gets or sets the list of bundles this bundable element is part of.
+        """ListOrSingle[CBundle]: Property that gets or sets the list of bundles this bundable element is part of.
         For the setter, ``None`` or ``[]`` can be used to remove the element from all bundles.
         In the setter, a single parameter of type :py:class:`.CBundle` will set this single bundle as the only
         bundle of the element. A list of bundles (i.e., list elements of
@@ -50,7 +50,7 @@ class CBundlable(CNamedElement):
         return list(self.bundles_)
 
     @bundles.setter
-    def bundles(self, bundles: Optional[List[CBundle] | CBundle]):
+    def bundles(self, bundles: Optional[ListOrSingle[CBundle]]):
         if bundles is None:
             bundles = []
         for b in self.bundles_:

@@ -1,4 +1,5 @@
 from typing import Dict, Iterable, Optional, Set, Unpack
+from codeable_models.cassociation import CAssociationKwargs
 from codeable_models.cattribute import CAttribute
 from codeable_models.cbundlable import CBundlable, CBundlableKwargs, ConnectedElementsContext
 from codeable_models.cenum import AttributeValueType, CEnum
@@ -6,7 +7,8 @@ from codeable_models.internal.commons import *
 
 
 class CClassifierKwargs(CBundlableKwargs, total=False):
-    pass
+    superclasses: Optional[ListOrSingle[CClassifier]]
+    attributes: Optional[Dict[str, AttributeValueType]]
 
 class CClassifier(CBundlable):
     def __init__(self, name: Optional[str]=None, **kwargs: Unpack[CClassifierKwargs]):
@@ -54,8 +56,8 @@ class CClassifier(CBundlable):
         the methods of ``CClassifier``.
 
         """
-        self.superclasses_: List[CClass] = []
-        self.subclasses_: List[CClass] = []
+        self.superclasses_: List[CClassifier] = []
+        self.subclasses_: List[CClassifier] = []
         self.attributes_: Dict[str, CAttribute] = {}
         self.associations_: List[CAssociation] = []
         super().__init__(name, **kwargs)
@@ -188,7 +190,7 @@ class CClassifier(CBundlable):
         return list(self.superclasses_)
 
     @superclasses.setter
-    def superclasses(self, elements):
+    def superclasses(self, elements: Optional[ListOrSingle[CClassifier]]):
         if elements is None:
             elements = []
         for sc in self.superclasses_:
@@ -335,7 +337,7 @@ class CClassifier(CBundlable):
                     all_associations.extend([a])
         return all_associations
 
-    def association(self, target: "CMetaclass", descriptor: Optional[str]=None, **kwargs: Dict[str, Any]):
+    def association(self, target: "CClassifier", descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
         """Method used to create associations on this classifier.
         Returns the :py:class:`.CAssociation` that is created.
 
@@ -368,7 +370,7 @@ class CClassifier(CBundlable):
 
     # get class path starting from this classifier, including this classifier
     def get_class_path_(self):
-        class_path: List[CClass] = [self]
+        class_path: List[CClassifier] = [self]
         for sc in self.superclasses:
             for cl in sc.get_class_path_():
                 if cl not in class_path:
