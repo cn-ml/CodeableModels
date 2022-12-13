@@ -13,6 +13,16 @@ from codeable_models.internal.commons import ListOrSingle, set_keyword_args, che
 class CBundlableKwargs(CNamedElementKwargs, total=False):
     bundles: ListOrSingle[CBundle]
 
+class ConnectedElementsKwargs(TypedDict, total=False):
+    add_bundles: bool
+    process_bundles: bool
+    stop_elements_exclusive: List[CNamedElement]
+    stop_elements_inclusive: List[CNamedElement]
+    add_stereotypes: bool
+    process_stereotypes: bool
+    add_associations: bool
+    add_links: bool
+    
 class CBundlable(CNamedElement):
     def __init__(self, name: Optional[str], **kwargs: Unpack[CBundlableKwargs]):
         """``CBundlable`` is a superclass for all elements in Codeable Models that can be placed in a
@@ -81,7 +91,7 @@ class CBundlable(CNamedElement):
         self.bundles_ = []
         super().delete()
 
-    def get_connected_elements(self, **kwargs: dict[str, Any]) -> List["CBundlable"]:
+    def get_connected_elements(self, **kwargs: Unpack[ConnectedElementsKwargs]) -> List["CBundlable"]:
         """Get all elements this element is connected to.
 
         Args:

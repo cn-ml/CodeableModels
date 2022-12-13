@@ -79,8 +79,8 @@ def get_var_value(_self: CNamedElement, class_path: Sequence[CClassifier], value
         raise Exception("Attribute has no classifier!")
     return values_dict.get(attribute.classifier, {}).get(var_name, None)
 
-def get_var_values(class_path: Sequence[CClassifier], values_dict: Dict[CClassifier, Dict[str, T]]):
-    result: Dict[Any, Any] = {}
+def get_var_values(class_path: Sequence[CClassifier], values_dict: Dict[CClassifier, Dict[str, T]]) -> Dict[str, T]:
+    result: Dict[str, T] = {}
     for cl in class_path:
         if cl in values_dict:
             for attrName in values_dict[cl]:

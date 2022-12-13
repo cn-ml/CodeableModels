@@ -1,5 +1,5 @@
 import re
-from typing import Any, List, Optional, TypeVar, Unpack
+from typing import Any, Dict, List, Optional, TypeVar, Unpack
 from codeable_models.cclass import CClass
 from codeable_models.cobject import CObject
 from codeable_models.cexception import CException
@@ -33,7 +33,7 @@ class CAssociationKwargs(CClassifierKwargs, total=False):
 class CAssociation(CClassifier):
     STAR_MULTIPLICITY = -1
 
-    def __init__(self, source: CClassifier, target: CClassifier, descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
+    def __init__(self, source: CClassifier, target: CClassifier, descriptor: Optional[str]=None, name: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
         """
         ``CAssociation`` is used for representing associations. Usually associations are created using the
         ``association`` method of :py:class:`.CClassifier` which calls the constructor of ``CAssociation``
@@ -149,21 +149,21 @@ class CAssociation(CClassifier):
         self.derived_from_ = None
         self.derived_associations_: List[CAssociation] = []
         self.stereotype_instances_holder = CStereotypeInstancesHolder(self)
-        self.tagged_values_ = {}
+        self.tagged_values_: Dict[CClassifier, Dict[str, Any]] = {}
         # we set the name here already so that either the name=... name or the descriptor name go into
         # super().__init__(self.name, ...)
-        self.name = kwargs.pop("name", None)
+        self.name = name
         self.ends = None
         if descriptor is not None:
             # note that descriptor might overwrite self.name, if it has the form "name: ..."
-            self._eval_descriptor(descriptor)
+            self._eval_descriptor(descriptor)#
         super().__init__(self.name, **kwargs)
 
         source.associations_.append(self)
         if source != target:
             target.associations_.append(self)
 
-    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.extend(["multiplicity", "role_name", "source_multiplicity",
@@ -332,10 +332,10 @@ class CAssociation(CClassifier):
         return self.stereotype_instances_holder.stereotypes
 
     @stereotype_instances.setter
-    def stereotype_instances(self, elements):
+    def stereotype_instances(self, elements: Optional[ListOrSingle[CStereotype]]):
         self.stereotype_instances_holder.stereotypes = elements
 
-    def get_tagged_value(self, name, stereotype=None):
+    def get_tagged_value(self, name: str, stereotype: Optional[CClassifier]=None):
         """Get the tagged value of a stereotype attribute with the given ``name``. Optionally the stereotype
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its stereotype.
@@ -352,7 +352,7 @@ class CAssociation(CClassifier):
         return get_var_value(self, self.stereotype_instances_holder.get_stereotype_instance_path(), self.tagged_values_,
                              name, VarValueKind.TAGGED_VALUE, stereotype)
 
-    def delete_tagged_value(self, name, stereotype=None):
+    def delete_tagged_value(self, name: str, stereotype: Optional[CClassifier]=None):
         """Delete tagged value of a stereotype attribute with the given ``name``.  Optionally the stereotype
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its stereotype.
@@ -369,7 +369,7 @@ class CAssociation(CClassifier):
         return delete_var_value(self, self.stereotype_instances_holder.get_stereotype_instance_path(),
                                 self.tagged_values_, name, VarValueKind.TAGGED_VALUE, stereotype)
 
-    def set_tagged_value(self, name, value, stereotype=None):
+    def set_tagged_value(self, name: str, value: Any, stereotype: Optional[CClassifier]=None):
         """Set the tagged value of a stereotype attribute with the given ``name`` to ``value``.  Optionally the
         stereotype to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its stereotype.
@@ -398,22 +398,19 @@ class CAssociation(CClassifier):
         return get_var_values(self.stereotype_instances_holder.get_stereotype_instance_path(), self.tagged_values_)
 
     @tagged_values.setter
-    def tagged_values(self, new_values):
+    def tagged_values(self, new_values: Dict[str, Any]):
         if self.is_deleted:
             raise CException("can't set tagged values on deleted link")
         set_var_values(self, new_values, VarValueKind.TAGGED_VALUE)
 
     @staticmethod
     def _check_association_class_derived_from_association_metaclass(class_: CClassifier, metaclass_: CClassifier, direction_string: str):
-        try:
-            check_is_cclass(class_)
-        except CException:
+        if not isinstance(class_, CClass):
             raise CException("association 'derived_from' is called on is not a class-level association")
-        try:
-            check_is_cmetaclass(metaclass_)
-        except CException:
+        if not isinstance(metaclass_, CMetaclass):
             raise CException("association used as 'derived_from' parameter is not a metaclass-level association")
-
+        if class_.metaclass is None:
+            raise CException("association 'derived_from' is called on does not have a metaclass!")
         if not class_.metaclass.is_classifier_of_type(metaclass_):
             raise CException(f"association {direction_string!s} class '{class_!s}' is not " +
                              f"derived {direction_string!s} metaclass '{metaclass_!s}'")

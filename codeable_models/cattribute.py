@@ -1,10 +1,14 @@
-from typing import Optional, Type
+from typing import Optional, Type, TypedDict, Unpack
 from codeable_models.cenum import AttributeValueType
 from codeable_models.internal.commons import *
 
 
+class CAttributeKwargs(TypedDict, total=False):
+    type: Type[Any] | CClass | CMetaclass
+    default: Optional[CObject]
+
 class CAttribute(object):
-    def __init__(self, **kwargs):
+    def __init__(self, **kwargs: Unpack[CAttributeKwargs]):
         """``CAttribute`` is internally used for storing attributes, and can be used by the user for
         detailed setting or introspection of attribute data.
 
@@ -20,8 +24,8 @@ class CAttribute(object):
 
         """
         self.name_: Optional[str] = None
-        self.classifier_: CClassifier = None
-        self.type_ = None
+        self.classifier_: Optional[CClassifier] = None
+        self.type_: Optional[Type[Any] | CClass | CMetaclass] = None
         self.default_ = None
         set_keyword_args(self, ["type", "default"], **kwargs)
 
@@ -68,7 +72,7 @@ class CAttribute(object):
         raise CException(f"default value '{default!s}' incompatible with attribute's type '{attribute_type!s}'")
 
     @type.setter
-    def type(self, new_type):
+    def type(self, new_type: Type[Any] | CClass | CMetaclass):
         if isinstance(new_type, CNamedElement):
             check_named_element_is_not_deleted(new_type)
         if self.default_ is not None:
@@ -81,7 +85,7 @@ class CAttribute(object):
             else:
                 if not isinstance(self.default_, new_type):
                     self._wrong_default_exception(self.default_, new_type)
-        self.type_: type = new_type
+        self.type_ = new_type
 
     @property
     def default(self):

@@ -8,7 +8,7 @@ from codeable_models.internal.var_values import delete_var_value, set_var_value,
 
 
 class CLink(CObject):
-    def __init__(self, association: CAssociation, source_object: CObject, target_object: CObject, **kwargs: Dict[str, Any]):
+    def __init__(self, association: CAssociation, source_object: CNamedElement, target_object: CNamedElement, **kwargs: Dict[str, Any]):
         """``CLink`` is used to define object links.
         Objects can be linked if their respective classes have an association.
         When linking objects, the association definitions are checked for correctness.
@@ -323,7 +323,7 @@ def _check_link_definition_and_replace_classes(link_definitions: LinkDefinitions
     return new_definitions
 
 
-def _determine_matching_association_and_set_context_info(context: "LinkKeywordsContext", source: CObject, targets: List[CObject]):
+def _determine_matching_association_and_set_context_info(context: "LinkKeywordsContext", source: CNamedElement, targets: CheckedTargetDefinitions):
     if source.class_object_class is not None:
         target_classifier_candidates = get_common_metaclasses(
             [co.class_object_class if not isinstance(co, CLink) else co for co in targets])
@@ -380,11 +380,13 @@ def _determine_matching_association_and_set_context_info(context: "LinkKeywordsC
     return context.association
 
 
-def link_objects_(context: "LinkKeywordsContext", source: CObject, targets: List[CObject]):
+def link_objects_(context: "LinkKeywordsContext", source: CNamedElement, targets: CheckedTargetDefinitions):
     new_links: List[CLink] = []
     source_obj = source
     if isinstance(source, CClass):
         source_obj = source.class_object_
+    if not isinstance(source_obj, CObject):
+        raise Exception("Source object is not of type object!")
     for t in targets:
         target = t
         if isinstance(t, CClass):
@@ -640,5 +642,5 @@ class LinkKeywordsContext(object):
             check_is_cassociation(self.association)
         self.sourceClassifier: Optional[CClassifier] = None
         self.target_classifier: Optional[CClassifier] = None
-        self.matchesInOrder: Dict[CObject, bool] = {}
-        self.objectLinksHaveBeenRemoved: List[CObject] = []
+        self.matchesInOrder: Dict[CNamedElement, bool] = {}
+        self.objectLinksHaveBeenRemoved: List[CNamedElement] = []

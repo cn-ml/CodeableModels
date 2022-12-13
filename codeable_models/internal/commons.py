@@ -4,7 +4,7 @@ from codeable_models import *
 T = TypeVar("T")
 ListOrSingle = List[T] | T
 
-def set_keyword_args(obj: object, allowed_values: List[str], **kwargs: dict[str, Any]):
+def set_keyword_args(obj: object, allowed_values: List[str], **kwargs: Any):
     for key in kwargs:
         if key in allowed_values:
             setattr(obj, key, kwargs[key])

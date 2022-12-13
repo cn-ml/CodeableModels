@@ -5,7 +5,7 @@ from codeable_models.cbundlable import CBundlable, ConnectedElementsContext
 from codeable_models.cclass import CClass
 from codeable_models.cenum import AttributeValueType
 from codeable_models.clink import CLink
-from codeable_models.cassociation import CAssociation
+from codeable_models.cassociation import CAssociation, CAssociationKwargs
 from codeable_models.cclassifier import CClassifier, CClassifierKwargs
 from codeable_models.cmetaclass import CMetaclass
 from codeable_models.cexception import CException
@@ -233,7 +233,7 @@ class CStereotype(CClassifier):
         raise CException("element is neither a class, nor a link, " +
                          "nor an association derived from a meta-class association")
 
-    def association(self, target, descriptor=None, **kwargs):
+    def association(self, target: CClassifier, descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
         """Method used to create associations on this stereotype. See documentation of method ``association``
         on :py:class:`.CClassifier` for details.
 

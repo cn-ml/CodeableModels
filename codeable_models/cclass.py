@@ -85,11 +85,11 @@ class CClass(CClassifier):
         self.objects_: List[CObject] = []
         self.class_object_ = CObject(self.metaclass, name, class_object_class_=self)
         self.stereotype_instances_holder = CStereotypeInstancesHolder(self)
-        self.tagged_values_: Dict[str, Any] = {}
+        self.tagged_values_: Dict[CClassifier, Dict[str, Any]] = {}
         super().__init__(name, **kwargs)
         self.class_object_.init_attribute_values_()
 
-    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Dict[str, Any]):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("stereotype_instances")
@@ -254,7 +254,7 @@ class CClass(CClassifier):
         return self.class_object_.values
 
     @values.setter
-    def values(self, new_values):
+    def values(self, new_values: Dict[str, Any]):
         self.class_object_.values = new_values
 
     def get_objects(self, name: str):
@@ -316,12 +316,13 @@ class CClass(CClassifier):
                     existing_attribute_names.append(attrName)
         for stereotypeInstance in self.stereotype_instances:
             for st in stereotypeInstance.class_path:
+                if not isinstance(st, CStereotype): continue
                 for name in st.default_values:
                     if name in existing_attribute_names:
                         if self.get_value(name) is None:
                             self.set_value(name, st.default_values[name])
 
-    def get_tagged_value(self, name, stereotype=None):
+    def get_tagged_value(self, name: str, stereotype: Optional[CClassifier]=None):
         """Get the tagged value of a stereotype attribute with the given ``name``. Optionally the stereotype
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its stereotype.
@@ -338,7 +339,7 @@ class CClass(CClassifier):
         return get_var_value(self, self.stereotype_instances_holder.get_stereotype_instance_path(), self.tagged_values_,
                              name, VarValueKind.TAGGED_VALUE, stereotype)
 
-    def delete_tagged_value(self, name, stereotype=None):
+    def delete_tagged_value(self, name: str, stereotype: Optional[CClassifier]=None):
         """Delete tagged value of a stereotype attribute with the given ``name``.  Optionally the stereotype
         to consider can be specified. This is needed, if one or more attributes of the same name are defined
         on the inheritance hierarchy. Then a shadowed attribute can be accessed by specifying its stereotype.
@@ -385,12 +386,12 @@ class CClass(CClassifier):
         return get_var_values(self.stereotype_instances_holder.get_stereotype_instance_path(), self.tagged_values_)
 
     @tagged_values.setter
-    def tagged_values(self, new_values):
+    def tagged_values(self, new_values: Dict[CClassifier, Dict[str, Any]]):
         if self.is_deleted:
             raise CException(f"can't set tagged values on deleted class")
         set_var_values(self, new_values, VarValueKind.TAGGED_VALUE)
 
-    def association(self, target: "CClass" | CClassifier, descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
+    def association(self, target: CClassifier, descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
         """Method used to create associations on this class. See documentation of method ``association``
         on :py:class:`.CClassifier` for details.
 

@@ -1,5 +1,5 @@
 class CException(Exception):
-    def __init__(self, value):
+    def __init__(self, value: str):
         """
         ``CException`` is a Python ``Exception`` that signals that an Exception is raised in Codeable Models.
         This type of exception is raised in all Codeable Models classes whenever an exception occurs.

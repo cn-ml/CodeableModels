@@ -62,7 +62,7 @@ class CClassifier(CBundlable):
         self.associations_: List[CAssociation] = []
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Dict[str, Any]):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("attributes")
@@ -169,13 +169,13 @@ class CClassifier(CBundlable):
         except KeyError:
             return None
 
-    def _remove_attribute_values_of_classifier(self, attributes_to_keep: Iterable[str]):
+    def _remove_attribute_values_of_classifier(self, attributes_to_keep: Iterable[str]) -> None:
         raise CException("should be overridden by subclasses to update defaults on instances")
 
-    def update_default_values_of_classifier_(self, attribute: Optional[CAttribute]=None):
+    def update_default_values_of_classifier_(self, attribute: Optional[CAttribute]=None) -> None:
         raise CException("should be overridden by subclasses to update defaults on instances")
 
-    def _check_same_type_as_self(self, cl):
+    def _check_same_type_as_self(self, cl: object):
         return isinstance(cl, self.__class__)
 
     @property
@@ -240,11 +240,7 @@ class CClassifier(CBundlable):
             bool: Boolean result of the check.
 
         """
-        type_classifiers = classifier.all_subclasses
-        type_classifiers.add(classifier)
-        if self in type_classifiers:
-            return True
-        return False
+        return self == classifier or self in classifier.all_subclasses
 
     def get_all_superclasses_(self, iterated_classes: Optional[Set[CClassifier]]=None):
         if iterated_classes is None:
@@ -337,7 +333,7 @@ class CClassifier(CBundlable):
                     all_associations.extend([a])
         return all_associations
 
-    def association(self, target: "CClassifier", descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
+    def association(self, target: CClassifier, descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
         """Method used to create associations on this classifier.
         Returns the :py:class:`.CAssociation` that is created.
 

@@ -1,10 +1,12 @@
-from typing import Any, Dict, Iterable, List, Optional, Unpack
+from typing import Any, Iterable, List, Optional, Unpack
+from codeable_models.cassociation import CAssociationKwargs
 from codeable_models.cbundlable import ConnectedElementsContext
 import codeable_models.cclass as cclass
+from codeable_models.cattribute import CAttribute
 from codeable_models.cclassifier import CClassifier, CClassifierKwargs
 from codeable_models.cexception import CException
 from codeable_models.cstereotype import CStereotype
-from codeable_models.internal.commons import check_is_cclass
+from codeable_models.internal.commons import ListOrSingle, check_is_cclass
 from codeable_models.internal.stereotype_holders import CStereotypesHolder
 
 
@@ -52,7 +54,7 @@ class CMetaclass(CClassifier):
         self.stereotypes_holder = CStereotypesHolder(self)
         super().__init__(name, **kwargs)
 
-    def _init_keyword_args(self, legal_keyword_args=None, **kwargs):
+    def _init_keyword_args(self, legal_keyword_args: Optional[List[str]]=None, **kwargs: Any):
         if legal_keyword_args is None:
             legal_keyword_args = []
         legal_keyword_args.append("stereotypes")
@@ -74,7 +76,7 @@ class CMetaclass(CClassifier):
                     all_classes.append(cl)
         return all_classes
 
-    def get_classes(self, name):
+    def get_classes(self, name: str):
         """Gets all classes directly derived from this meta-class that have the specified name.
 
         Args:
@@ -86,7 +88,7 @@ class CMetaclass(CClassifier):
         """
         return list(cl for cl in self.classes if cl.name == name)
 
-    def get_class(self, name):
+    def get_class(self, name: str):
         """Gets the class directly derived from this meta-class that has the specified name. If more than one
         such classes exist, the first one is returned.
 
@@ -98,9 +100,9 @@ class CMetaclass(CClassifier):
 
         """
         classes = self.get_classes(name)
-        return None if len(classes) == 0 else classes[0]
+        return next(iter(classes), None)
 
-    def get_stereotypes(self, name):
+    def get_stereotypes(self, name: str):
         """Gets all stereotypes extending this meta-class that have the specified name.
 
         Args:
@@ -112,7 +114,7 @@ class CMetaclass(CClassifier):
         """
         return list(cl for cl in self.stereotypes if cl.name == name)
 
-    def get_stereotype(self, name):
+    def get_stereotype(self, name: str):
         """Gets the stereotype extending this meta-class that has the specified name. If more than one
         such stereotypes exist, the first one is returned.
 
@@ -124,7 +126,7 @@ class CMetaclass(CClassifier):
 
         """
         stereotypes = self.get_stereotypes(name)
-        return None if len(stereotypes) == 0 else stereotypes[0]
+        return next(iter(stereotypes), None)
 
     def add_class(self, cl: cclass.CClass):
         """Add the class ``cl`` to the classes of this meta-class.
@@ -183,15 +185,17 @@ class CMetaclass(CClassifier):
         return self.stereotypes_holder.stereotypes
 
     @stereotypes.setter
-    def stereotypes(self, elements):
+    def stereotypes(self, elements: Optional[ListOrSingle[CStereotype]]):
         self.stereotypes_holder.stereotypes = elements
 
-    def update_default_values_of_classifier_(self, attribute=None):
+    def update_default_values_of_classifier_(self, attribute: Optional[CAttribute]=None):
         for i in self.all_classes:
             attr_items = self.attributes_.items()
             if attribute is not None:
                 attr_items = {attribute.name_: attribute}.items()
             for attrName, attr in attr_items:
+                if attrName is None:
+                    raise Exception("Attribute has no name in attr_items!")
                 if attr.default is not None:
                     if i.get_value(attrName, self) is None:
                         i.set_value(attrName, attr.default, self)
@@ -202,7 +206,7 @@ class CMetaclass(CClassifier):
                 if attrName not in attributes_to_keep:
                     i.delete_value(attrName, self)
 
-    def association(self, target: "CMetaclass", descriptor: Optional[str]=None, **kwargs: Dict[str, Any]):
+    def association(self, target: CClassifier, descriptor: Optional[str]=None, **kwargs: Unpack[CAssociationKwargs]):
         """Method used to create associations on this meta-class. See documentation of method ``association``
         on :py:class:`.CClassifier` for details.
 
