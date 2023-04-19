@@ -289,7 +289,7 @@ class CObject(CBundlable):
 
         """
         association_links: List[CLink] = []
-        for link in list(self.links_):
+        for link in self.links_:
             if link.association == association:
                 association_links.extend([link])
         return association_links

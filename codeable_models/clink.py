@@ -8,7 +8,7 @@ from codeable_models.internal.var_values import delete_var_value, set_var_value,
 
 
 class CLink(CObject):
-    def __init__(self, association: CAssociation, source_object: CNamedElement, target_object: CNamedElement, **kwargs: Dict[str, Any]):
+    def __init__(self, association: CAssociation, source_object: CObject, target_object: CObject, **kwargs: Dict[str, Any]):
         """``CLink`` is used to define object links.
         Objects can be linked if their respective classes have an association.
         When linking objects, the association definitions are checked for correctness.
@@ -70,10 +70,10 @@ class CLink(CObject):
         """
 
         self.is_deleted = False
-        self.source_ = source_object
-        self.target_ = target_object
+        self.source_: CObject = source_object
+        self.target_: CObject = target_object
         self.label = None
-        self.association = association
+        self.association: CAssociation = association
         self.stereotype_instances_holder = CStereotypeInstancesHolder(self)
         self.tagged_values_: Dict[Any, Any] = {}
         super().__init__(association)
@@ -125,13 +125,13 @@ class CLink(CObject):
         return False
 
     @property
-    def role_name(self):
+    def role_name(self) -> Optional[str]:
         """str: Getter for the (target) role name of this link.
         """
         return self.association.role_name
 
     @property
-    def source_role_name(self):
+    def source_role_name(self) -> Optional[str]:
         """str: Getter for the source role name of this link.
         """
         return self.association.source_role_name
@@ -255,17 +255,17 @@ class CLink(CObject):
         set_var_values(self, new_values, VarValueKind.TAGGED_VALUE)
 
 
-CheckedTargetDefinitions = List[CNamedElement]
-TargetDefinitions = Optional[ListOrSingle[CNamedElement]] | CheckedTargetDefinitions
-CheckedLinkDefinitions = Dict[CNamedElement, CheckedTargetDefinitions]
-LinkDefinitions = Dict[CNamedElement, Optional[ListOrSingle[CNamedElement]]] | CheckedLinkDefinitions
+CheckedTargetDefinitions = List[CObject]
+TargetDefinitions = Optional[ListOrSingle[CObject]] | CheckedTargetDefinitions
+CheckedLinkDefinitions = Dict[CObject, CheckedTargetDefinitions]
+LinkDefinitions = Dict[CObject, Optional[ListOrSingle[CObject]]] | CheckedLinkDefinitions
 
-def _get_target_objects_from_definition(source_obj: CNamedElement, targets: TargetDefinitions) -> CheckedTargetDefinitions:
+def _get_target_objects_from_definition(source_obj: CObject, targets: TargetDefinitions) -> CheckedTargetDefinitions:
     if targets is None:
         targets = []
     elif not isinstance(targets, list):
         targets = [targets]
-    new_targets: List[CNamedElement] = []
+    new_targets: List[CObject] = []
     for t in targets:
         is_source_a_class = source_obj.class_object_class is not None
         if isinstance(t, CClass):
@@ -323,7 +323,7 @@ def _check_link_definition_and_replace_classes(link_definitions: LinkDefinitions
     return new_definitions
 
 
-def _determine_matching_association_and_set_context_info(context: "LinkKeywordsContext", source: CNamedElement, targets: CheckedTargetDefinitions):
+def _determine_matching_association_and_set_context_info(context: "LinkKeywordsContext", source: CObject, targets: CheckedTargetDefinitions):
     if source.class_object_class is not None:
         target_classifier_candidates = get_common_metaclasses(
             [co.class_object_class if not isinstance(co, CLink) else co for co in targets])
@@ -380,7 +380,7 @@ def _determine_matching_association_and_set_context_info(context: "LinkKeywordsC
     return context.association
 
 
-def link_objects_(context: "LinkKeywordsContext", source: CNamedElement, targets: CheckedTargetDefinitions):
+def link_objects_(context: "LinkKeywordsContext", source: CObject, targets: CheckedTargetDefinitions):
     new_links: List[CLink] = []
     source_obj = source
     if isinstance(source, CClass):

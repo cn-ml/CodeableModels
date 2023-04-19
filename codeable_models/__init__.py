@@ -28,6 +28,8 @@ or import its classes and functions, e.g.::
 
 """
 
+# pyright: reportUnusedImport=information
+
 from codeable_models.cexception import CException
 from codeable_models.cnamedelement import CNamedElement
 from codeable_models.cbundlable import CBundlable

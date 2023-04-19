@@ -11,7 +11,7 @@ from codeable_models.internal.stereotype_holders import CStereotypesHolder
 
 
 class CMetaclassKwargs(CClassifierKwargs, total=False):
-    pass
+    stereotypes: Optional[ListOrSingle[CStereotype]]
 
 class CMetaclass(CClassifier):
     def __init__(self, name: Optional[str]=None, **kwargs: Unpack[CMetaclassKwargs]):
